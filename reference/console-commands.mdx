@@ -1,0 +1,170 @@
+---
+title: Console Commands
+description: Built-in commands available in the Minecraft Web Client console and chat
+---
+
+The Minecraft Web Client provides several built-in commands that can be executed in the game chat or browser console.
+
+## Built-in Chat Commands
+
+These commands are available in the in-game chat when playing in singleplayer mode or hosting a world.
+
+### Export/Download World
+
+<ParamField path="/export" type="command">
+  Export the currently loaded world as a ZIP file. The world is automatically saved before export.
+  
+  **Aliases:** `/download`
+  
+  **Example:**
+  ```
+  /export
+  ```
+  
+  <Note>
+    The world is first saved to browser memory, then packaged into a ZIP file that will be downloaded to your device.
+  </Note>
+</ParamField>
+
+### Publish/Share World
+
+<ParamField path="/publish" type="command">
+  Open your singleplayer world to the internet via P2P connection. Creates a shareable join link that is automatically copied to your clipboard.
+  
+  **Aliases:** `/share`
+  
+  **Example:**
+  ```
+  /publish
+  ```
+  
+  <Warning>
+    This uses peer-to-peer networking. Your connection information will be shared with players who join.
+  </Warning>
+</ParamField>
+
+### Close P2P Connection
+
+<ParamField path="/close" type="command">
+  Close the P2P connection and stop allowing other players to join your world.
+  
+  **Example:**
+  ```
+  /close
+  ```
+</ParamField>
+
+### Manual Save
+
+<ParamField path="/save" type="command">
+  Manually save the current world to browser memory. Useful when auto-save is disabled.
+  
+  **Example:**
+  ```
+  /save
+  ```
+  
+  <Note>
+    After saving, you'll see a confirmation message: "Saved to browser memory"
+  </Note>
+</ParamField>
+
+### Get Position
+
+<ParamField path="/pos" type="command">
+  Copy your current position to clipboard. Supports both player position and block position.
+  
+  **Arguments:**
+  - `block` - Get the position of the block you're looking at (optional)
+  
+  **Examples:**
+  ```
+  /pos
+  /pos block
+  ```
+  
+  The position is formatted as: `X Y Z` with 2 decimal places.
+</ParamField>
+
+### Download Mesher Log
+
+<ParamField path="/mesherlog" type="command">
+  Download performance logs from the chunk mesher workers. Useful for debugging rendering performance.
+  
+  **Example:**
+  ```
+  /mesherlog
+  ```
+  
+  <Note>
+    This command is available in both singleplayer and multiplayer modes.
+  </Note>
+</ParamField>
+
+## Console Debug Functions
+
+These functions are available in the browser console (F12) for advanced debugging.
+
+### Debug Toggle
+
+```javascript
+debugToggle
+```
+
+Enables all debug messages. Warning: This will start packet spam in the console.
+
+<Warning>
+  Instead of enabling all debug messages, consider using `options.debugLogNotFrequentPackets` to filter packet spam.
+</Warning>
+
+### Debug Top Packets
+
+```javascript
+debugTopPackets
+```
+
+Use with `JSON.stringify()` to see what packets were received/sent by name.
+
+**Example:**
+```javascript
+JSON.stringify(debugTopPackets)
+```
+
+### Debug Changed Options
+
+```javascript
+debugChangedOptions
+```
+
+See what options have been changed from their default values. Don't change options directly here - use the `options` object instead.
+
+### Debug Scene Chunks
+
+```javascript
+debugSceneChunks
+```
+
+Similar to `world.sectionObjects`, but shows chunks relative to your current position (e.g., 0,0 is the current chunk).
+
+### Debug Server/Client Packet Names
+
+```javascript
+debugServerPacketNames
+debugClientPacketNames
+```
+
+Get all available packet names for the current server version.
+
+## Availability
+
+<Accordion title="Command Availability Rules">
+  - Commands marked as **alwaysAvailable** work in both singleplayer and multiplayer
+  - Commands without this flag only work in singleplayer mode
+  - `/pos` and `/mesherlog` are available in all modes
+  - World management commands (`/export`, `/save`, `/publish`) only work in singleplayer
+</Accordion>
+
+## See Also
+
+- [Global Variables](/reference/global-variables) - Console variables for debugging
+- [Keybindings](/reference/keybindings) - Keyboard shortcuts and F3 keybindings

@@ -1,0 +1,328 @@
+---
+title: Mobile & Touch Controls
+description: Comprehensive guide to touch controls, mobile optimization, and playing Minecraft Web Client on iOS and Android devices
+---
+
+## Overview
+
+Minecraft Web Client provides **first-class touch and mobile support** with multiple control schemes optimized for smartphones and tablets. Play on iOS and Android devices with virtual joystick, touch buttons, and mobile-specific optimizations.
+
+## Touch Control Types
+
+The client supports two movement control schemes:
+
+<Tabs>
+  <Tab title="Modern (Joystick)">
+    **Recommended for most users**
+
+    - Virtual joystick for movement (left side of screen)
+    - Action buttons on the right side
+    - Smooth analog movement
+    - Best for exploration and building
+
+    Set in settings:
+    ```javascript
+    options.touchMovementType = 'modern'
+    ```
+  </Tab>
+
+  <Tab title="Classic (Split Screen)">
+    **Traditional Minecraft PE style**
+
+    - Left side: Forward/backward/strafe
+    - Right side: Look around
+    - Discrete directional movement
+    - Familiar to Minecraft PE players
+
+    Set in settings:
+    ```javascript
+    options.touchMovementType = 'classic'
+    ```
+  </Tab>
+</Tabs>
+
+## Touch Interaction Types
+
+<CardGroup cols={2}>
+  <Card title="Classic" icon="hand-pointer">
+    **Touch-based interactions**
+    - Tap blocks to break/place
+    - Touch and hold for continuous actions
+    - Direct screen interaction
+
+    ```javascript
+    options.touchInteractionType = 'classic'
+    ```
+  </Card>
+
+  <Card title="Buttons" icon="circle-dot">
+    **Dedicated action buttons**
+    - Separate break/place buttons
+    - More precise control
+    - Ideal for combat and building
+
+    ```javascript
+    options.touchInteractionType = 'buttons'
+    ```
+  </Card>
+</CardGroup>
+
+## Setting Up Touch Controls
+
+<Steps>
+  <Step title="Access Touch Settings">
+    Open the game menu and navigate to **Settings** → **Controls**
+  </Step>
+
+  <Step title="Choose Movement Type">
+    Select your preferred movement type:
+    - **Modern** - Virtual joystick (recommended)
+    - **Classic** - Split-screen touch areas
+  </Step>
+
+  <Step title="Choose Interaction Type">
+    Select your interaction style:
+    - **Classic** - Direct touch
+    - **Buttons** - Action buttons
+  </Step>
+
+  <Step title="Customize Buttons (Optional)">
+    Click **Setup Touch Buttons** to customize:
+    - Button positions
+    - Button sizes
+    - Opacity levels
+  </Step>
+</Steps>
+
+## Joystick Controls (Modern Mode)
+
+From `src/react/TouchAreasControls.tsx:20-46`:
+
+```typescript
+export const handleMovementStickDelta = (e?: { clientX, clientY }) => {
+  const max = 32
+  let x = 0
+  let y = 0
+  if (e) {
+    x = e.clientX - joystickPointer.pointer!.x
+    y = e.clientY - joystickPointer.pointer!.y
+    x = Math.min(Math.max(x, -max), max)
+    y = Math.min(Math.max(y, -max), max)
+  }
+
+  const vector = {
+    x: x / max,
+    y: 0,
+    z: y / max,
+  }
+  contro.emit('movementUpdate', { vector, soleVector: vector })
+}
+```
+
+The joystick provides **analog movement** with deadzone handling and smooth directional control.
+
+## Touch Button Configuration
+
+Customize touch buttons with these settings:
+
+### Button Size
+
+```javascript
+options.touchButtonsSize = 40 // Default: 40 pixels
+```
+
+### Button Opacity
+
+```javascript
+options.touchButtonsOpacity = 80 // Default: 80% (0-100)
+```
+
+### Button Positions
+
+```javascript
+options.touchButtonsPosition = 12 // Default: 12% from edge
+```
+
+### Individual Button Sizes
+
+From `src/defaultOptions.ts:152-160`:
+
+```typescript
+function getTouchControlsSize() {
+  return {
+    joystick: 55,
+    action: 36,
+    break: 36,
+    jump: 36,
+    sneak: 36,
+  }
+}
+```
+
+### Button Positions (Customizable)
+
+```typescript
+function getDefaultTouchControlsPositions() {
+  return {
+    action: [70, 76],   // [x%, y%]
+    sneak: [84, 76],
+    break: [70, 57],
+    jump: [84, 57],
+  }
+}
+```
+
+## Mobile Optimizations
+
+### Auto Fullscreen
+
+**Recommended**: Enable auto fullscreen to prevent accidental browser actions
+
+```javascript
+options.autoFullScreen = true
+```
+
+This prevents Ctrl+W (close tab) issues on mobile browsers.
+
+### Always Show Mobile Controls
+
+Force mobile controls to display even on desktop:
+
+```javascript
+options.alwaysShowMobileControls = true
+```
+
+### Touch-Specific Features
+
+The client automatically detects touch input from `src/react/TouchControls.tsx:47-54`:
+
+```typescript
+const usingTouch = useUsingTouch()
+const { usingGamepadInput } = useSnapshot(miscUiState)
+const { touchMovementType } = useSnapshot(options)
+
+if (!usingTouch || usingGamepadInput || touchMovementType !== 'classic') {
+  return null // Hide classic controls
+}
+```
+
+## Available Touch Buttons
+
+<CardGroup cols={2}>
+  <Card title="Action Button" icon="hand">
+    Right-click action (place blocks, use items)
+  </Card>
+  <Card title="Break Button" icon="hammer">
+    Left-click action (break blocks, attack)
+  </Card>
+  <Card title="Jump Button" icon="arrow-up">
+    Jump / Fly up in creative mode
+  </Card>
+  <Card title="Sneak Button" icon="arrow-down">
+    Sneak / Fly down in creative mode
+  </Card>
+</CardGroup>
+
+## Platform-Specific Notes
+
+### iOS Devices
+
+- **File Size Limit**: ~300 MB for worlds and resource packs loaded in RAM
+- **Safari**: Full support with pointer lock API
+- **Add to Home Screen**: Create a fullscreen app experience
+- **Performance**: Optimized for Metal rendering
+
+### Android Devices
+
+- **Chrome**: Best performance and compatibility
+- **Firefox**: Supported with some limitations
+- **File Access**: Can open world folders directly
+- **Gamepad Support**: Connect Bluetooth controllers
+
+### Tablets
+
+- Larger screen provides more precise touch control
+- Can adjust GUI scale for better readability
+- Supports landscape and portrait orientations
+
+## Recommended Settings for Mobile
+
+From the README (lines 43-49):
+
+```yaml
+Controls:
+  - Touch Controls Type: Joystick
+  - Auto Full Screen: On
+
+Interface:
+  - Enable Minimap: Always
+
+Controls:
+  - Raw Input: On (enabled by default)
+
+Interface:
+  - Chat Select: On (enabled by default)
+```
+
+## Customizing Button Layout
+
+<Steps>
+  <Step title="Enable Setup Mode">
+    Navigate to Settings → Controls → **Setup Touch Buttons**
+  </Step>
+
+  <Step title="Select Button">
+    Tap any button to select it for repositioning
+  </Step>
+
+  <Step title="Drag to Position">
+    Drag the selected button to your desired position
+  </Step>
+
+  <Step title="Adjust Size">
+    Use the size slider to resize individual buttons
+  </Step>
+
+  <Step title="Save Layout">
+    Click **Done** to save your custom layout
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Touch Controls Not Appearing
+
+1. Check that you're using a touch device or have `alwaysShowMobileControls` enabled
+2. Ensure a gamepad is not connected (gamepad input takes priority)
+3. Verify `touchMovementType` is set correctly
+
+### Joystick Not Responsive
+
+- Check that Modern mode is enabled
+- Ensure you're touching the left side of the screen
+- Verify the joystick isn't hidden by modal dialogs
+
+### Accidental Tab Close
+
+Enable **Auto Full Screen** in settings to prevent browser shortcuts.
+
+## Advanced Configuration
+
+Access advanced touch settings via browser console:
+
+```javascript
+// View all touch settings
+console.log(options.touchButtonsSize)
+console.log(options.touchControlsPositions)
+console.log(options.touchControlsSize)
+
+// Modify settings
+options.touchButtonsSize = 50
+options.touchButtonsOpacity = 70
+```
+
+## See Also
+
+- [Controller Support](/features/controller-support) - Gamepad and controller setup
+- [Settings](/features/settings) - Complete settings reference
+- [Keybindings](/customize/keybindings) - Customize controls

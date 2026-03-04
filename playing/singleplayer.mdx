@@ -1,0 +1,316 @@
+---
+title: Singleplayer Mode
+description: Create and play in local worlds with an integrated server
+---
+
+## Overview
+
+Minecraft Web Client includes a fully integrated JavaScript server (based on Flying Squid) that runs entirely in your browser. This enables true singleplayer gameplay with world generation, saving, and all the features you'd expect from a local Minecraft server.
+
+<Note>
+  Your singleplayer worlds run completely in your browser - no external server required!
+</Note>
+
+## Creating a New World
+
+There are multiple ways to start a singleplayer world:
+
+<Tabs>
+  <Tab title="Empty World (Quick Start)">
+    Use the `?singleplayer=1` or `?sp=1` query parameter to create an empty world instantly:
+    
+    ```
+    https://mcraft.fun/?singleplayer=1
+    ```
+    
+    <Warning>
+      Worlds created this way are **not saved automatically**. Use `/export` to download your progress.
+    </Warning>
+  </Tab>
+  
+  <Tab title="With Version">
+    Specify a Minecraft version for your world:
+    
+    ```
+    https://mcraft.fun/?singleplayer=1&version=1.19.4
+    ```
+    
+    Supported versions: **1.8 - 1.21.5**
+    
+    First-class tested versions:
+    - 1.19.4
+    - 1.21.4
+  </Tab>
+  
+  <Tab title="Load Existing Save">
+    Load a previously saved world by folder name:
+    
+    ```
+    https://mcraft.fun/?loadSave=my-world-name
+    ```
+    
+    <Info>
+      The save name is the **folder name**, not the world title shown in-game.
+    </Info>
+  </Tab>
+</Tabs>
+
+## World Generation
+
+The integrated local server provides basic world generation capabilities:
+
+- **Flat terrain generation** - Simple world generation for quick building
+- **Custom world types** - Support for different generator options
+- **Chunk loading** - Generates new chunks as you explore
+
+<Note>
+  World generation is simpler than vanilla Minecraft. Complex terrain features may generate differently.
+</Note>
+
+### Generation Limitations
+
+```javascript
+// From src/mcTypes.ts - World generation configuration
+interface LevelDat {
+  generatorName?: string;
+  generatorVersion?: number;
+  generatorOptions?: string;
+  // ...
+}
+```
+
+New chunks may be generated with basic terrain. For complex worlds, it's recommended to:
+1. Import existing world files
+2. Stay within pre-generated areas
+3. Use `/export` frequently to backup progress
+
+## The Local Server
+
+The integrated server is a full implementation that:
+
+- Runs entirely in JavaScript (via Flying Squid)
+- Handles all game logic server-side
+- Manages world data and persistence
+- Supports multiplayer via P2P (see [P2P Multiplayer](/features/p2p-multiplayer))
+
+```typescript
+// From src/createLocalServer.ts
+export const startLocalServer = (serverOptions) => {
+  const passOptions = { ...serverOptions, Server: LocalServer }
+  const server = createMCServer(passOptions)
+  server.formatMessage = (message) => `[server] ${message}`
+  return server
+}
+```
+
+### Unsupported Features
+
+Some features are not available in the local server:
+
+<Warning>
+  The following features are not supported:
+  - Transaction packet handling
+  - Some advanced teleport mechanics
+</Warning>
+
+## Saving Your World
+
+Worlds can be saved in multiple ways:
+
+### Automatic Saving
+
+By default, worlds are saved:
+- On a regular interval during gameplay
+- When you disconnect from the world
+- When you close the browser (if supported)
+
+```typescript
+// Worlds are saved to browser memory
+// From src/builtinCommands.ts
+command: ['/save'],
+async invoke () {
+  await saveServer(false)
+  writeText('Saved to browser memory')
+}
+```
+
+### Manual Saving
+
+Use the `/save` command in chat to manually save your world:
+
+```
+/save
+```
+
+<Info>
+  You'll see a confirmation message: "Saved to browser memory"
+</Info>
+
+### Disable Auto-Save
+
+To prevent automatic saving (useful for testing), use the `?noSave=true` parameter:
+
+```
+https://mcraft.fun/?singleplayer=1&noSave=true
+```
+
+<Warning>
+  With `noSave=true`, only manual `/save` commands will persist your world!
+</Warning>
+
+## Exporting Worlds
+
+Export your world to download it as a ZIP file:
+
+<Steps>
+  <Step title="Save Your World">
+    First, ensure your world is saved:
+    ```
+    /save
+    ```
+  </Step>
+  
+  <Step title="Export Command">
+    Use either command to export:
+    ```
+    /export
+    ```
+    or
+    ```
+    /download
+    ```
+  </Step>
+  
+  <Step title="Download">
+    Your browser will download a ZIP file named `world-prismarine-exported.zip` containing:
+    - `level.dat` - World metadata
+    - `region/` - All region files with terrain data
+    - `playerdata/` - Player data files
+    - All other world files
+  </Step>
+</Steps>
+
+```typescript
+// Export implementation from src/builtinCommands.ts
+export const exportWorld = async (path: string, type: 'zip' | 'folder', zipName = 'world-prismarine-exported') => {
+  if (type === 'zip') {
+    setLoadingScreenStatus('Generating zip, this may take a few minutes')
+    const zip = new JSZip()
+    await addFolderToZip(path, zip, '')
+    const zipContent = await zip.generateAsync({ type: 'blob' })
+    
+    const downloadLink = document.createElement('a')
+    downloadLink.href = URL.createObjectURL(zipContent)
+    downloadLink.download = `${zipName}.zip`
+    downloadLink.click()
+  }
+}
+```
+
+<Warning>
+  Large worlds may take several minutes to export. Don't close the browser while exporting!
+</Warning>
+
+## Server Configuration
+
+Advanced users can configure the local server with query parameters:
+
+### Server Settings
+
+Use `?serverSetting=<key>:<value>` to configure server options:
+
+```
+?serverSetting=noInitialChunksSend:true
+```
+
+This disables initial chunk loading on the loading screen.
+
+<Accordion title="Available Server Settings">
+  Server settings are defined in the Flying Squid module options. See the [Space Squid repository](https://github.com/zardoy/space-squid/tree/everything/src/modules.ts#L51) for available options.
+</Accordion>
+
+## Gameplay Modes
+
+Switch between game modes using F3+F4 or the `/gamemode` command:
+
+<CardGroup cols={2}>
+  <Card title="Creative" icon="wand-magic-sparkles">
+    Full flying, instant breaking, unlimited resources
+  </Card>
+  <Card title="Survival" icon="heart">
+    Standard gameplay with health and hunger
+  </Card>
+  <Card title="Adventure" icon="map">
+    Limited block breaking, good for custom maps
+  </Card>
+  <Card title="Spectator" icon="ghost">
+    Fly through blocks, observe without interaction
+  </Card>
+</CardGroup>
+
+```typescript
+// Cycle through game modes with F3+F4
+// From src/controls.ts:702
+nextGameMode = 'creative' | 'survival' | 'adventure' | 'spectator'
+bot.chat(`/gamemode ${nextGameMode}`)
+```
+
+## World Data Access
+
+For debugging and advanced usage, access world data via the browser console:
+
+```javascript
+// Access the local server instance
+localServer
+
+// View loaded region files
+localServer.overworld.storageProvider.regions
+
+// Change world name
+localServer.levelData.LevelName = 'My World'
+localServer.writeLevelDat()
+```
+
+<Info>
+  See [Global Variables](/reference/global-variables) for more console commands.
+</Info>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Regular Backups">
+    Export your world frequently using `/export`. Browser data can be cleared accidentally, so keep offline backups!
+  </Accordion>
+  
+  <Accordion title="Version Compatibility">
+    Stick to first-class versions (1.19.4, 1.21.4) for the most stable experience.
+  </Accordion>
+  
+  <Accordion title="Memory Management">
+    Large worlds consume browser memory. If you experience lag:
+    - Limit exploration to reduce loaded chunks
+    - Export and reload to clear memory
+    - Use smaller render distances
+  </Accordion>
+  
+  <Accordion title="World Compatibility">
+    Worlds created in the web client can be exported and used in:
+    - Vanilla Minecraft Java Edition
+    - Other Minecraft servers (with compatible versions)
+    - Imported back into the web client later
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Warning>
+  **level.dat not found**: Ensure you're loading a valid world folder containing `level.dat`
+</Warning>
+
+<Warning>
+  **Version mismatch**: If your world is from an unsupported version, you'll be prompted to select a compatible version. Choose the closest supported version.
+</Warning>
+
+<Info>
+  **World generation issues**: If new chunks appear broken, reload chunks with F3+A or export and reimport the world.
+</Info>

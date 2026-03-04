@@ -1,0 +1,400 @@
+---
+title: "Browser Compatibility"
+description: "Supported browsers, required features, and known issues"
+---
+
+## Supported browsers
+
+Minecraft Web Client uses modern web APIs and requires a recent browser version.
+
+### Desktop browsers
+
+<CardGroup cols={2}>
+  <Card title="Chrome / Edge" icon="chrome">
+    **Minimum version**: 103+
+    
+    **Status**: ✅ Fully supported
+    
+    Best performance and all features work.
+  </Card>
+  
+  <Card title="Firefox" icon="firefox">
+    **Status**: ✅ Fully supported
+    
+    All features work with good performance.
+  </Card>
+  
+  <Card title="Safari" icon="safari">
+    **Status**: ✅ Fully supported
+    
+    Works well on macOS and iOS.
+  </Card>
+  
+  <Card title="Opera" icon="opera">
+    **Status**: ⚠️ Supported with caveats
+    
+    See known issues below.
+  </Card>
+</CardGroup>
+
+### Mobile browsers
+
+<CardGroup cols={2}>
+  <Card title="iOS Safari" icon="mobile">
+    **Minimum version**: iOS 14+
+    
+    **Status**: ✅ Fully supported
+    
+    Touch controls work great. Note: 300 MB file limit for zip files.
+  </Card>
+  
+  <Card title="Android Chrome" icon="android">
+    **Minimum version**: Android 13+, Chrome 103+
+    
+    **Status**: ✅ Fully supported
+    
+    Excellent performance with touch controls.
+  </Card>
+</CardGroup>
+
+## Minimum browser versions
+
+Based on the project's browserslist configuration:
+
+### Production targets
+
+```json
+{
+  "iOS": ">= 14",
+  "Android": ">= 13",
+  "Chrome": ">= 103",
+  "not dead": true,
+  "not ie <= 11": true,
+  "not op_mini all": true,
+  "> 0.5%": true
+}
+```
+
+<Warning>
+  **Not supported**: Internet Explorer, Opera Mini
+</Warning>
+
+## Required browser features
+
+The client uses several modern web APIs:
+
+### Essential features
+
+<AccordionGroup>
+  <Accordion icon="lock" title="WebGL2">
+    Required for 3D rendering using Three.js.
+    
+    **Check support**: Open browser console and type:
+    ```javascript
+    !!document.createElement('canvas').getContext('webgl2')
+    ```
+  </Accordion>
+
+  <Accordion icon="globe" title="WebSocket">
+    Required for connecting to proxy servers and multiplayer.
+    
+    All modern browsers support this.
+  </Accordion>
+
+  <Accordion icon="database" title="IndexedDB">
+    Used for storing worlds, settings, and cache.
+    
+    **Note**: Private/incognito mode may have limited storage.
+  </Accordion>
+
+  <Accordion icon="worker" title="Web Workers">
+    Used for mesher workers (4 workers for chunk rendering).
+    
+    All modern browsers support this.
+  </Accordion>
+
+  <Accordion icon="mouse-pointer" title="Pointer Lock API">
+    Required for capturing mouse movement in-game.
+    
+    User must click to grant permission.
+  </Accordion>
+</AccordionGroup>
+
+### Enhanced features (Chromium only)
+
+These features improve the experience but aren't required:
+
+<AccordionGroup>
+  <Accordion icon="keyboard" title="Keyboard Lock API">
+    **API**: `navigator.keyboard.lock()`
+    
+    **Availability**: Chromium browsers only
+    
+    **Purpose**: Allows using any key combination (like Ctrl+W) in fullscreen without triggering browser shortcuts.
+  </Accordion>
+
+  <Accordion icon="keyboard" title="Keyboard Layout Map">
+    **API**: `navigator.keyboard.getLayoutMap()`
+    
+    **Availability**: Chromium browsers only
+    
+    **Purpose**: Displays correct keyboard symbols for keybindings on different layouts (QWERTY vs AZERTY).
+  </Accordion>
+
+  <Accordion icon="mouse" title="Unadjusted Mouse Movement">
+    **API**: `requestPointerLock({ unadjustedMovement: true })`
+    
+    **Availability**: Most modern browsers
+    
+    **Purpose**: Disables system mouse acceleration (important for Mac users). Also known as "raw input".
+    
+    <Tip>
+      This is enabled by default in game settings for better control precision.
+    </Tip>
+  </Accordion>
+
+  <Accordion icon="shield" title="Crypto API">
+    **API**: `window.crypto.subtle`
+    
+    **Availability**: All modern browsers
+    
+    **Purpose**: Required for chat features when joining online servers with authentication.
+  </Accordion>
+</AccordionGroup>
+
+## Known browser issues
+
+### Opera Mini
+
+<Warning>
+  **Issue**: Right-click-and-hold opens a new tab due to mouse gestures.
+  
+  **Solution**: Disable *mouse gestures* in Opera Mini settings.
+</Warning>
+
+### Vivaldi
+
+<Warning>
+  **Issue**: Some users experience control issues with raw input.
+  
+  **Solution**: Disable **Controls** → **Raw Input** in game settings if experiencing problems.
+</Warning>
+
+### Safari (all versions)
+
+<Note>
+  Safari has some limitations with Web APIs but the game still works well. Some advanced keyboard features may not be available.
+</Note>
+
+## Mobile-specific considerations
+
+### iOS limitations
+
+<AccordionGroup>
+  <Accordion icon="file" title="File size limits">
+    iOS Safari has a ~300 MB limit for files loaded into memory.
+    
+    **Impact**: Large zip world files may fail to load.
+    
+    **Workaround**: Use folder loading or smaller worlds.
+  </Accordion>
+
+  <Accordion icon="database" title="Storage limits">
+    iOS may restrict storage in private browsing mode.
+    
+    **Solution**: Use normal browsing mode for world saves.
+  </Accordion>
+
+  <Accordion icon="keyboard" title="Virtual keyboard">
+    The virtual keyboard may interfere with touch controls.
+    
+    **Solution**: Use joystick controls and minimize chat usage.
+  </Accordion>
+</AccordionGroup>
+
+### Android optimizations
+
+<Accordion icon="android" title="Performance tips">
+  - Use Chrome for best performance
+  - Close background apps
+  - Reduce render distance in settings
+  - Enable hardware acceleration in Chrome flags
+</Accordion>
+
+## Testing infrastructure
+
+This project is tested with [BrowserStack](https://www.browserstack.com/).
+
+<Note>
+  Special thanks to BrowserStack for providing testing infrastructure!
+</Note>
+
+## Performance expectations
+
+### Desktop
+
+- **Render distance**: 8-16 chunks (depending on hardware)
+- **Frame rate**: 60+ FPS on modern hardware
+- **Chunk loading**: Near-instant with mesher workers
+
+### Mobile
+
+- **Render distance**: 4-8 chunks recommended
+- **Frame rate**: 30-60 FPS (device dependent)
+- **Battery usage**: Moderate to high
+
+<Tip>
+  Reduce render distance in **Settings** → **Video** for better performance on mobile.
+</Tip>
+
+## Feature detection
+
+You can check browser support in the console:
+
+```javascript
+// Check WebGL2 support
+const canvas = document.createElement('canvas')
+const gl = canvas.getContext('webgl2')
+console.log('WebGL2:', !!gl)
+
+// Check Pointer Lock support
+console.log('Pointer Lock:', 'pointerLockElement' in document)
+
+// Check Keyboard Lock support (Chromium only)
+console.log('Keyboard Lock:', 'keyboard' in navigator && 'lock' in navigator.keyboard)
+
+// Check raw input support
+console.log('Raw Input:', 'DocumentOrShadowRoot' in window)
+
+// Check storage
+if ('storage' in navigator && 'estimate' in navigator.storage) {
+  navigator.storage.estimate().then(estimate => {
+    console.log('Storage available:', (estimate.quota / 1024 / 1024 / 1024).toFixed(2) + ' GB')
+  })
+}
+```
+
+## Browser permissions
+
+The game requires these permissions:
+
+<AccordionGroup>
+  <Accordion icon="mouse-pointer" title="Pointer Lock">
+    **When requested**: When you click to start playing
+    
+    **Purpose**: Capture mouse movement for looking around
+    
+    **Required**: Yes
+  </Accordion>
+
+  <Accordion icon="keyboard" title="Keyboard Lock">
+    **When requested**: When entering fullscreen (Chromium only)
+    
+    **Purpose**: Use game keybindings without triggering browser shortcuts
+    
+    **Required**: No (enhances experience)
+  </Accordion>
+
+  <Accordion icon="folder-open" title="File System Access">
+    **When requested**: When loading a folder
+    
+    **Purpose**: Read and write world files
+    
+    **Required**: Only for folder loading
+  </Accordion>
+
+  <Accordion icon="bell" title="Notifications">
+    **When requested**: Never (not currently used)
+    
+    **Purpose**: N/A
+    
+    **Required**: No
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting compatibility
+
+<AccordionGroup>
+  <Accordion icon="circle-exclamation" title="Black screen / won't load">
+    **Possible causes**:
+    - WebGL2 not supported
+    - Hardware acceleration disabled
+    - Browser too old
+    
+    **Solutions**:
+    1. Update your browser to the latest version
+    2. Enable hardware acceleration in browser settings
+    3. Try a different browser (Chrome recommended)
+    4. Check browser console for errors (F12)
+  </Accordion>
+
+  <Accordion icon="circle-exclamation" title="Controls not working">
+    **Possible causes**:
+    - Pointer lock denied
+    - Browser extension interfering
+    - Incorrect focus
+    
+    **Solutions**:
+    1. Click the game window to request pointer lock
+    2. Disable browser extensions temporarily
+    3. Ensure game window has focus
+    4. Try raw input toggle in settings
+  </Accordion>
+
+  <Accordion icon="circle-exclamation" title="Poor performance">
+    **Possible causes**:
+    - Too many workers/tabs open
+    - Integrated graphics
+    - Old hardware
+    
+    **Solutions**:
+    1. Close other browser tabs
+    2. Reduce render distance
+    3. Disable resource packs
+    4. Use Chrome for better performance
+  </Accordion>
+
+  <Accordion icon="circle-exclamation" title="Storage issues">
+    **Possible causes**:
+    - Private browsing mode
+    - Storage quota exceeded
+    - iOS file size limit
+    
+    **Solutions**:
+    1. Use normal browsing mode
+    2. Clear browser cache/data
+    3. Use smaller world files on iOS
+    4. Check available storage
+  </Accordion>
+</AccordionGroup>
+
+## Advanced browser features used
+
+For developers and curious users, here are the rare/advanced Web APIs used:
+
+| API | Usage | Browser support |
+|-----|-------|----------------|
+| `Crypto.subtle` | Chat authentication for online servers | All modern browsers |
+| `requestPointerLock({ unadjustedMovement: true })` | Raw mouse input (disable acceleration) | Chrome, Firefox, Safari |
+| `navigator.keyboard.lock()` | Capture all keys in fullscreen | Chromium only |
+| `navigator.keyboard.getLayoutMap()` | Display correct keybinding symbols | Chromium only |
+| `WebGL2` | 3D rendering with Three.js | All modern browsers |
+| `Web Workers` | Mesher workers for chunk rendering | All modern browsers |
+| `File System Access API` | Read/write world folders | Chromium, Edge, Safari (partial) |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Start playing now
+  </Card>
+  <Card title="Mobile guide" icon="mobile" href="/features/mobile-touch">
+    Optimize for mobile devices
+  </Card>
+  <Card title="Settings" icon="gear" href="/features/settings">
+    Configure for your device
+  </Card>
+  <Card title="Debugging" icon="bug" href="/advanced/debugging">
+    Browser console and debugging
+  </Card>
+</CardGroup>

@@ -1,0 +1,304 @@
+---
+title: Keybindings
+description: Default controls, F3 keybindings, and custom keybindings in Minecraft Web Client
+---
+
+The Minecraft Web Client supports extensive keyboard and gamepad controls, with F3 debug keybindings for advanced functionality.
+
+## Default Controls
+
+### Movement
+
+<ParamField path="forward" type="KeyW">
+  Move forward
+</ParamField>
+
+<ParamField path="back" type="KeyS">
+  Move backward
+</ParamField>
+
+<ParamField path="left" type="KeyA">
+  Move left (strafe)
+</ParamField>
+
+<ParamField path="right" type="KeyD">
+  Move right (strafe)
+</ParamField>
+
+<ParamField path="jump" type="Space">
+  Jump. Double-tap to toggle fly mode in creative/spectator.
+  
+  **Gamepad:** A button
+</ParamField>
+
+<ParamField path="sneak" type="ShiftLeft">
+  Sneak/crouch
+  
+  **Gamepad:** Down on D-pad
+</ParamField>
+
+<ParamField path="sprint" type="ControlLeft">
+  Sprint. Double-tap forward movement key (W) to also toggle sprint.
+  
+  **Gamepad:** Left Stick (click)
+</ParamField>
+
+### Game Interactions
+
+<ParamField path="inventory" type="KeyE">
+  Open inventory
+  
+  **Gamepad:** X button
+</ParamField>
+
+<ParamField path="drop" type="KeyQ">
+  Drop one item from current hotbar slot
+  
+  **Gamepad:** B button
+</ParamField>
+
+<ParamField path="swapHands" type="KeyF">
+  Swap items between main hand and offhand
+</ParamField>
+
+<ParamField path="selectItem" type="KeyH">
+  Pick block (middle-click equivalent) - selects the block you're looking at
+</ParamField>
+
+<ParamField path="nextHotbarSlot" type="Gamepad">
+  Cycle to next hotbar slot
+  
+  **Gamepad:** Right Bumper
+</ParamField>
+
+<ParamField path="prevHotbarSlot" type="Gamepad">
+  Cycle to previous hotbar slot
+  
+  **Gamepad:** Left Bumper
+</ParamField>
+
+<ParamField path="attackDestroy" type="Left Mouse / Gamepad">
+  Attack or break block
+  
+  **Gamepad:** Right Trigger
+</ParamField>
+
+<ParamField path="interactPlace" type="Right Mouse / Gamepad">
+  Interact or place block
+  
+  **Gamepad:** Left Trigger
+</ParamField>
+
+### UI & Communication
+
+<ParamField path="chat" type="KeyT / Enter">
+  Open chat
+  
+  **Gamepad:** Right on D-pad
+</ParamField>
+
+<ParamField path="command" type="Slash">
+  Open chat with '/' prefix for commands
+</ParamField>
+
+<ParamField path="playersList" type="Tab">
+  Show player list (hold)
+  
+  **Gamepad:** Left on D-pad
+</ParamField>
+
+<ParamField path="debugOverlay" type="F3">
+  Toggle debug overlay (shows FPS, coordinates, chunk info)
+</ParamField>
+
+### Client-Side Controls
+
+<ParamField path="zoom" type="KeyC">
+  Zoom in (hold)
+</ParamField>
+
+<ParamField path="viewerConsole" type="Backquote">
+  Open viewer console (only available in viewer mode)
+</ParamField>
+
+<ParamField path="togglePerspective" type="F5">
+  Cycle camera perspective: First Person → Third Person Back → Third Person Front
+  
+  **Gamepad:** Up on D-pad
+</ParamField>
+
+<ParamField path="toggleFullscreen" type="F11">
+  Toggle fullscreen mode
+</ParamField>
+
+<ParamField path="toggleMap" type="KeyJ">
+  Toggle full-screen minimap
+</ParamField>
+
+### Special Keys
+
+<ParamField path="F1" type="F1">
+  Toggle UI visibility (hide/show HUD)
+</ParamField>
+
+<ParamField path="F2" type="F2">
+  Take screenshot (saves canvas as PNG)
+</ParamField>
+
+<ParamField path="Escape" type="Escape">
+  - Close current modal/menu
+  - Exit pointer lock
+  - Ctrl+Escape: Close all modals
+</ParamField>
+
+## F3 Keybindings
+
+Press and hold **F3**, then press one of these keys for advanced functions:
+
+<AccordionGroup>
+  <Accordion title="F3 + A - Reload All Chunks">
+    Clears and reloads all chunks that are currently loaded from the server.
+    
+    **Use case:** Fix chunk rendering glitches or update chunk data
+    
+    ```javascript
+    // In the code, this is at src/controls.ts:636
+    f3Keybinds[0].action()
+    ```
+  </Accordion>
+
+  <Accordion title="F3 + G - Toggle Chunk Borders">
+    Shows yellow borders around chunk sections and colored outlines around entities.
+    
+    **Entity outline colors:**
+    - Yellow: Chunk borders (section geometries)
+    - Red: Hostile mobs
+    - Green: Passive mobs  
+    - Blue: Players
+    
+    ```javascript
+    // Toggles options.showChunkBorders
+    ```
+  </Accordion>
+
+  <Accordion title="F3 + H - Chunks Debug">
+    Opens the chunks debug modal with detailed chunk loading information.
+  </Accordion>
+
+  <Accordion title="F3 + Y - Open Widget">
+    Shows a menu to select and open various widgets (waypoints, etc.).
+  </Accordion>
+
+  <Accordion title="F3 + T - Reload Textures">
+    Reloads all textures from the active resource pack. Only works if a resource pack is installed.
+    
+    <Note>
+      This also works for server resource packs.
+    </Note>
+  </Accordion>
+
+  <Accordion title="F3 + F4 - Cycle Game Mode" default>
+    Cycles through game modes in order:
+    Creative → Survival → Adventure → Spectator → Creative
+    
+    **Only works in singleplayer or replay sessions.**
+    
+    In multiplayer, sends `/gamemode` command to server.
+  </Accordion>
+
+  <Accordion title="F3 + P - Show Player & Ping Details">
+    Displays:
+    - Player username
+    - Last known latency (ping)
+    - Proxy server address
+    - Current proxy ping
+    - Player UUID
+    
+    **Only available in multiplayer mode.**
+  </Accordion>
+
+  <Accordion title="Renderer Debug Menu">
+    Opens renderer-specific debug information and performance metrics.
+  </Accordion>
+
+  <Accordion title="Copy Server Resource Pack">
+    Copies the active server resource pack to your regular resource pack collection.
+    
+    **Only enabled when using a server resource pack.**
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  On mobile devices, long-press the F3 button to show a menu with all available F3 actions.
+</Note>
+
+## Camera Rotation Controls
+
+You can bind keys to rotate the camera without using the mouse:
+
+<ParamField path="rotateCameraLeft" type="Unbound">
+  Rotate camera left (continuous)
+</ParamField>
+
+<ParamField path="rotateCameraRight" type="Unbound">
+  Rotate camera right (continuous)
+</ParamField>
+
+<ParamField path="rotateCameraUp" type="Unbound">
+  Rotate camera up (continuous)
+</ParamField>
+
+<ParamField path="rotateCameraDown" type="Unbound">
+  Rotate camera down (continuous)
+</ParamField>
+
+## Custom Keybindings
+
+You can customize all keybindings in the game settings:
+
+1. Open the pause menu (Escape)
+2. Go to Settings → Controls
+3. Click on any action to rebind it
+
+<Accordion title="Custom Command Keybindings">
+  The client supports creating custom command keybindings that can:
+  
+  - Send chat commands
+  - Toggle or set specific settings
+  - Execute JavaScript code (advanced)
+  
+  Custom keybindings are stored in `appStorage.keybindings` and persist across sessions.
+</Accordion>
+
+## Gamepad Support
+
+Full gamepad support is available with these mappings:
+
+| Action | Gamepad Button |
+|--------|----------------|
+| Jump | A |
+| Drop | B |
+| Inventory | X |
+| Attack/Break | Right Trigger |
+| Interact/Place | Left Trigger |
+| Next Hotbar | Right Bumper |
+| Prev Hotbar | Left Bumper |
+| Sprint | Left Stick (click) |
+| Sneak/Down | Right Stick (click) |
+| Movement | Left Stick |
+| Camera | Right Stick |
+| Chat | D-pad Right |
+| Players List | D-pad Left |
+| Perspective | D-pad Up |
+| Sneak | D-pad Down |
+| Pause | Start |
+| Back (UI) | B |
+
+<Warning>
+  Gamepad controls require the game to have focus. Some browsers may require user interaction before gamepad input is detected.
+</Warning>
+
+## See Also
+
+- [Console Commands](/reference/console-commands) - Built-in chat commands
+- [Query Parameters](/reference/query-parameters) - URL parameters for configuration

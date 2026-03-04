@@ -1,0 +1,730 @@
+---
+title: Controls & Keybindings
+description: Master keyboard, mouse, gamepad controls and customize your keybindings
+---
+
+## Overview
+
+Minecraft Web Client features comprehensive control support with fully customizable keybindings, gamepad support, and mobile touch controls. All controls are handled through the **ControMax** library with support for keyboard, mouse, and gamepad inputs.
+
+<Info>
+  Controls are configured in the game settings and stored in your browser's local storage.
+</Info>
+
+## Default Keyboard Controls
+
+### Movement
+
+<ParamField path="W" type="key">
+  Move forward
+</ParamField>
+
+<ParamField path="S" type="key">
+  Move backward
+</ParamField>
+
+<ParamField path="A" type="key">
+  Strafe left
+</ParamField>
+
+<ParamField path="D" type="key">
+  Strafe right
+</ParamField>
+
+<ParamField path="Space" type="key">
+  Jump / Swim up
+  
+  **Double-tap**: Toggle flying (in Creative/Spectator)
+</ParamField>
+
+<ParamField path="Shift" type="key">
+  Sneak / Descend while flying
+</ParamField>
+
+<ParamField path="Ctrl" type="key">
+  Sprint
+  
+  **Alternative**: Double-tap W to sprint
+</ParamField>
+
+```typescript
+// Movement controls from src/controls.ts:46
+commands: {
+  movement: {
+    forward: ['KeyW'],
+    back: ['KeyS'],
+    left: ['KeyA'],
+    right: ['KeyD'],
+    jump: ['Space', 'A'],
+    sneak: ['ShiftLeft', 'Down'],
+    sprint: ['ControlLeft', 'Left Stick'],
+  }
+}
+```
+
+### Actions
+
+<ParamField path="Left Click" type="mouse">
+  Attack / Break block
+</ParamField>
+
+<ParamField path="Right Click" type="mouse">
+  Use item / Place block / Interact
+</ParamField>
+
+<ParamField path="Middle Click" type="mouse">
+  Pick block (Creative mode)
+  
+  Copies the block you're looking at to your hotbar
+</ParamField>
+
+<ParamField path="Mouse Wheel" type="mouse">
+  Cycle through hotbar slots
+</ParamField>
+
+<ParamField path="1-9" type="keys">
+  Select hotbar slot 1-9
+</ParamField>
+
+```typescript
+// Mouse controls from src/controls.ts:826
+addEventListener('mousedown', async (e) => {
+  if (!isInRealGameSession()) return
+  void pointerLock.requestPointerLock()
+  
+  // Middle click - pick block
+  if (e.button === 1) {
+    await selectItem()
+  }
+})
+```
+
+### Inventory & Interaction
+
+<ParamField path="E" type="key">
+  Open/close inventory
+</ParamField>
+
+<ParamField path="Q" type="key">
+  Drop item (single item from stack)
+</ParamField>
+
+<ParamField path="Ctrl+Q" type="key">
+  Drop entire stack
+</ParamField>
+
+<ParamField path="F" type="key">
+  Swap items between hands
+</ParamField>
+
+<ParamField path="H" type="key">
+  Select item (pick block in Creative)
+</ParamField>
+
+### Communication
+
+<ParamField path="T" type="key">
+  Open chat
+</ParamField>
+
+<ParamField path="Enter" type="key">
+  Open chat (alternative)
+</ParamField>
+
+<ParamField path="/" type="key">
+  Open chat with `/` prefix (command mode)
+</ParamField>
+
+<ParamField path="Tab" type="key">
+  **Hold**: Show player list
+</ParamField>
+
+<ParamField path="M" type="key">
+  Toggle microphone (voice chat)
+</ParamField>
+
+### Camera & View
+
+<ParamField path="F5" type="key">
+  Cycle perspective (First person → Third person back → Third person front)
+</ParamField>
+
+<ParamField path="C" type="key">
+  Zoom (OptiFine-style)
+</ParamField>
+
+<ParamField path="F1" type="key">
+  Toggle UI visibility
+</ParamField>
+
+<ParamField path="F2" type="key">
+  Take screenshot
+  
+  Saves to downloads folder as PNG
+</ParamField>
+
+```typescript
+// Screenshot functionality from src/controls.ts:871
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'F2' || e.repeat || !isGameActive(true)) return
+  e.preventDefault()
+  
+  const canvas = document.getElementById('viewer-canvas') as HTMLCanvasElement
+  const link = document.createElement('a')
+  link.href = canvas.toDataURL('image/png')
+  const date = new Date()
+  link.download = `screenshot ${date.toLocaleString()}.png`
+  link.click()
+})
+```
+
+### System & Interface
+
+<ParamField path="Esc" type="key">
+  - **In game**: Pause menu
+  - **In menu**: Go back / Close
+  - **Ctrl+Esc**: Close all modals
+</ParamField>
+
+<ParamField path="F11" type="key">
+  Toggle fullscreen
+</ParamField>
+
+<ParamField path="J" type="key">
+  Toggle full-screen minimap
+</ParamField>
+
+<ParamField path="`" type="key">
+  Toggle viewer console (debug)
+</ParamField>
+
+## Camera Controls
+
+The client supports multiple camera control methods:
+
+### Mouse Camera
+
+**Pointer Lock** mode (default):
+- Click the game to lock mouse pointer
+- Move mouse to rotate camera
+- Smooth, responsive rotation
+- Supports **Raw Input** mode
+
+<Info>
+  **Raw Input** (`options.rawInput`) disables mouse acceleration for precise aiming. Recommended for all platforms, enabled by default.
+</Info>
+
+```typescript
+// Raw input support from TECH.md:56
+// requestPointerLock({ unadjustedMovement: true }) API
+// Disables system mouse acceleration (important for Mac users)
+```
+
+### Keyboard Camera Rotation
+
+Rotate camera using keyboard (useful for accessibility):
+
+<ParamField path="Arrow Keys" type="keys">
+  Rotate camera (when bound in settings)
+  
+  Default: Not bound (customizable)
+</ParamField>
+
+```typescript
+// Keyboard rotation from src/controls.ts:225
+const cameraRotationControls = {
+  movements: {
+    left: { movementX: -0.5, movementY: 0 },
+    right: { movementX: 0.5, movementY: 0 },
+    up: { movementX: 0, movementY: -0.5 },
+    down: { movementX: 0, movementY: 0.5 }
+  },
+  config: {
+    speed: 1, // movement per interval
+    interval: 5 // ms between movements
+  }
+}
+```
+
+Bind in settings:
+- `general.rotateCameraLeft`
+- `general.rotateCameraRight`
+- `general.rotateCameraUp`
+- `general.rotateCameraDown`
+
+### Camera Perspectives
+
+Cycle with **F5**:
+
+<Tabs>
+  <Tab title="First Person">
+    Default view - see from player's eyes
+  </Tab>
+  <Tab title="Third Person Back">
+    View your character from behind
+  </Tab>
+  <Tab title="Third Person Front">
+    View your character from the front (selfie mode)
+  </Tab>
+</Tabs>
+
+```typescript
+// Perspective switching from src/controls.ts:388
+case 'general.togglePerspective':
+  if (pressed) {
+    const currentPerspective = playerState.reactive.perspective
+    switch (currentPerspective) {
+      case 'first_person':
+        playerState.reactive.perspective = 'third_person_back'
+        break
+      case 'third_person_back':
+        playerState.reactive.perspective = 'third_person_front'
+        break
+      case 'third_person_front':
+        playerState.reactive.perspective = 'first_person'
+        break
+    }
+  }
+  break
+```
+
+## Gamepad Support
+
+Full Xbox/PlayStation controller support with customizable button mappings.
+
+### Default Gamepad Layout
+
+<CardGroup cols={2}>
+  <Card title="Movement" icon="arrows-up-down-left-right">
+    **Left Stick**: Move
+    
+    **Right Stick**: Look around
+    
+    **Click Left Stick**: Sprint
+    
+    **Click Right Stick**: Toggle sneak
+  </Card>
+  
+  <Card title="Actions" icon="hand-pointer">
+    **A Button**: Jump / Select (UI)
+    
+    **B Button**: Drop item / Back (UI)
+    
+    **X Button**: Inventory / Confirm (UI)
+    
+    **Y Button**: (Customizable)
+  </Card>
+  
+  <Card title="Triggers" icon="bullseye">
+    **Right Trigger**: Attack/Break
+    
+    **Left Trigger**: Use/Place
+    
+    **Right Bumper**: Next hotbar slot
+    
+    **Left Bumper**: Previous hotbar slot
+  </Card>
+  
+  <Card title="Special" icon="gamepad">
+    **D-Pad Up**: Toggle perspective
+    
+    **D-Pad Down**: Sneak
+    
+    **D-Pad Left**: Player list
+    
+    **D-Pad Right**: Chat
+    
+    **Start**: Pause menu
+  </Card>
+</CardGroup>
+
+```typescript
+// Gamepad configuration from src/controls.ts:44
+commands: {
+  movement: {
+    forward: ['KeyW'],
+    back: ['KeyS'],
+    left: ['KeyA'],
+    right: ['KeyD'],
+    jump: ['Space', 'A'], // Keyboard, Gamepad
+    sneak: ['ShiftLeft', 'Down'],
+    toggleSneakOrDown: [null, 'Right Stick'],
+    sprint: ['ControlLeft', 'Left Stick'],
+  },
+  general: {
+    inventory: ['KeyE', 'X'],
+    drop: ['KeyQ', 'B'],
+    attackDestroy: [null, 'Right Trigger'],
+    interactPlace: [null, 'Left Trigger'],
+    nextHotbarSlot: [null, 'Right Bumper'],
+    prevHotbarSlot: [null, 'Left Bumper'],
+  }
+}
+```
+
+<Info>
+  Gamepad polling runs at **10ms intervals** for responsive input.
+</Info>
+
+### UI Navigation with Gamepad
+
+- **A**: Select / Left click
+- **B**: Back / Cancel
+- **X**: Right click (context menu)
+- **Left Stick (Click)**: Speed up cursor movement
+
+## F3 Debug Controls
+
+Advanced debug shortcuts accessed with **F3** + key:
+
+<ParamField path="F3" type="key">
+  Toggle debug overlay (FPS, coordinates, chunk info)
+</ParamField>
+
+<ParamField path="F3+A" type="key">
+  Reload all chunks
+  
+  Useful when chunks appear corrupted or incomplete
+</ParamField>
+
+<ParamField path="F3+G" type="key">
+  Toggle chunk borders and entity outlines
+  
+  - Yellow: Chunk sections
+  - Red: Hostile mobs
+  - Green: Passive mobs
+  - Blue: Players
+</ParamField>
+
+<ParamField path="F3+H" type="key">
+  Show chunks debug menu
+</ParamField>
+
+<ParamField path="F3+T" type="key">
+  Reload textures
+  
+  Reloads resource pack textures
+</ParamField>
+
+<ParamField path="F3+Y" type="key">
+  Open widget menu
+  
+  Access minimap, waypoints, and other widgets
+</ParamField>
+
+<ParamField path="F3+P" type="key">
+  Show player and ping details
+  
+  Displays:
+  - Player UUID
+  - Current ping to server
+  - Proxy server latency
+</ParamField>
+
+<ParamField path="F3+F4" type="key">
+  Cycle game mode
+  
+  Creative → Survival → Adventure → Spectator
+</ParamField>
+
+```typescript
+// F3 keybinds from src/controls.ts:628
+export const f3Keybinds = [
+  {
+    key: 'KeyA',
+    action() {
+      // Reload all chunks
+      worldView.unloadChunk(/* all chunks */)
+      void reloadChunks()
+    },
+    mobileTitle: 'Reload chunks',
+  },
+  {
+    key: 'KeyG',
+    action() {
+      options.showChunkBorders = !options.showChunkBorders
+    },
+    mobileTitle: 'Toggle chunk borders',
+  },
+  {
+    key: 'F4',
+    async action() {
+      // Cycle through game modes
+      let nextGameMode: GameMode
+      switch (bot.game.gameMode) {
+        case 'creative': nextGameMode = 'survival'; break
+        case 'survival': nextGameMode = 'adventure'; break
+        case 'adventure': nextGameMode = 'spectator'; break
+        case 'spectator': nextGameMode = 'creative'; break
+      }
+      bot.chat(`/gamemode ${nextGameMode}`)
+    },
+    mobileTitle: 'Cycle Game Mode'
+  },
+]
+```
+
+## Customizing Keybindings
+
+All keybindings are fully customizable through the settings menu.
+
+### Accessing Keybindings
+
+<Steps>
+  <Step title="Open Settings">
+    Press **Esc** → **Options** (or Settings)
+  </Step>
+  
+  <Step title="Controls Section">
+    Navigate to **Controls** or **Keybindings**
+  </Step>
+  
+  <Step title="Customize">
+    Click any action to rebind it
+    
+    - Press the desired key/button
+    - Supports multiple bindings per action
+    - Separate keyboard and gamepad bindings
+  </Step>
+  
+  <Step title="Save">
+    Changes are automatically saved to browser storage
+  </Step>
+</Steps>
+
+### Keybinding Storage
+
+Keybindings are stored in local storage and synced via Valtio:
+
+```typescript
+// Keybindings storage from src/controls.ts:35
+export const customKeymaps = proxy(appStorage.keybindings)
+subscribe(customKeymaps, () => {
+  appStorage.keybindings = customKeymaps
+})
+
+// Update bindings dynamically
+export function updateBinds(commands: any) {
+  for (const [group, actions] of Object.entries(commands)) {
+    contro.userConfig![group] = Object.fromEntries(
+      Object.entries(actions).map(([key, value]) => {
+        return [key, {
+          keys: value?.keys ?? undefined,
+          gamepad: value?.gamepad ?? undefined,
+        }]
+      })
+    )
+  }
+}
+```
+
+<Info>
+  Your keybindings are preserved across sessions and browser restarts.
+</Info>
+
+### Keyboard Layout Support
+
+<Note>
+  **Chromium browsers only**: The client uses `navigator.keyboard.getLayoutMap()` to display the correct key symbols for different keyboard layouts (QWERTY, AZERTY, etc.).
+</Note>
+
+```typescript
+// From TECH.md:58
+// navigator.keyboard.getLayoutMap()
+// To display the right keyboard symbol for the key keybinding
+// on different keyboard layouts (e.g. QWERTY vs AZERTY)
+```
+
+## Special Control Modes
+
+### Flying Controls
+
+In Creative or Spectator mode:
+
+<ParamField path="Space" type="key">
+  Fly upward
+</ParamField>
+
+<ParamField path="Shift" type="key">
+  Fly downward
+</ParamField>
+
+<ParamField path="Double-tap Space" type="key">
+  Toggle flying on/off
+</ParamField>
+
+```typescript
+// Flying toggle from src/controls.ts:797
+const toggleFly = (newState = !isFlying(), sendAbilities?: boolean) => {
+  if (!bot.entity.canFly) return
+  
+  if (newState) {
+    bot._client.write('abilities', { flags: 2 })
+    (bot.entity as any).flying = true
+  } else {
+    bot._client.write('abilities', { flags: 0 })
+    (bot.entity as any).flying = false
+  }
+}
+```
+
+### Spectator Mode
+
+Additional controls when spectating:
+
+- **Click on entity**: Spectate that entity
+- **Shift+F5**: Exit entity spectating
+- Fly through blocks
+- No collision detection
+
+## Control Settings
+
+### Recommended Settings
+
+From the README, these settings improve control experience:
+
+<AccordionGroup>
+  <Accordion title="Raw Input (Enabled by default)">
+    **Controls → Raw Input → On**
+    
+    Makes camera controls more precise by disabling mouse acceleration.
+    
+    <Info>
+      Especially important for Mac users!
+    </Info>
+  </Accordion>
+  
+  <Accordion title="Touch Controls Type">
+    **Controls → Touch Controls Type → Joystick**
+    
+    Better mobile experience with virtual joystick.
+  </Accordion>
+  
+  <Accordion title="Auto Full Screen">
+    **Controls → Auto Full Screen → On**
+    
+    Prevents accidental Ctrl+W (close window) during gameplay.
+  </Accordion>
+</AccordionGroup>
+
+### Advanced Control Options
+
+Access via browser console:
+
+```javascript
+// View all control options
+options
+
+// Modify control settings
+options.rawInput = true
+options.mouseSensitivity = 1.5
+options.autoFullscreen = true
+
+// View current controller state
+contro.pressedKeys // Currently pressed keys
+contro.userConfig // Current keybinding configuration
+```
+
+## Mobile Touch Controls
+
+See [Mobile & Touch Support](/features/mobile-touch) for comprehensive touch control documentation, including:
+
+- Virtual joysticks
+- Touch buttons
+- Gesture controls
+- Mobile-specific optimizations
+
+## Controller Support
+
+See [Controller Support](/features/controller-support) for detailed gamepad configuration, including:
+
+- Button remapping
+- Stick sensitivity
+- Trigger customization
+- Multiple controller support
+
+## Browser-Specific Features
+
+### Chromium Browsers (Chrome, Edge, Brave)
+
+<CardGroup cols={2}>
+  <Card title="Keyboard Lock" icon="lock">
+    `navigator.keyboard.lock()` in fullscreen
+    
+    Allows using Ctrl+W, Ctrl+T, etc. in-game
+  </Card>
+  
+  <Card title="Layout Detection" icon="keyboard">
+    `navigator.keyboard.getLayoutMap()`
+    
+    Shows correct key symbols for your layout
+  </Card>
+</CardGroup>
+
+### All Browsers
+
+<Card title="Pointer Lock" icon="arrow-pointer">
+  `requestPointerLock({ unadjustedMovement: true })`
+  
+  Raw mouse input for precise camera control
+</Card>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Controls Not Responding">
+    **Cause**: Game window not focused or pointer not locked
+    
+    **Solutions**:
+    - Click on the game canvas
+    - Check if pointer lock is active
+    - Reload the page
+  </Accordion>
+  
+  <Accordion title="Mouse Too Sensitive/Slow">
+    **Cause**: Mouse sensitivity setting
+    
+    **Solutions**:
+    - Adjust in Settings → Controls → Mouse Sensitivity
+    - Try enabling/disabling Raw Input
+    - Check system mouse settings
+  </Accordion>
+  
+  <Accordion title="Gamepad Not Detected">
+    **Cause**: Gamepad not connected or browser doesn't support
+    
+    **Solutions**:
+    - Ensure gamepad is properly connected
+    - Press any button to activate gamepad
+    - Check browser gamepad API support
+    - Try Chrome/Edge for best compatibility
+  </Accordion>
+  
+  <Accordion title="Keybinding Conflicts">
+    **Cause**: Multiple actions bound to same key
+    
+    **Solutions**:
+    - Review keybindings in Settings
+    - Reset to defaults if needed
+    - Clear browser storage and reconfigure
+  </Accordion>
+  
+  <Accordion title="Vivaldi Browser Issues">
+    **Cause**: Mouse gestures interfering with controls
+    
+    **Solutions**:
+    - Disable **Raw Input** in game settings
+    - Disable mouse gestures in Vivaldi settings
+  </Accordion>
+  
+  <Accordion title="Opera Mini Issues">
+    **Cause**: Mouse gestures opening new tabs on right-click
+    
+    **Solutions**:
+    - Disable mouse gestures in Opera settings
+  </Accordion>
+</AccordionGroup>
+
+## Command Reference
+
+See [Keybindings Reference](/reference/keybindings) for a complete, printable list of all keybindings.

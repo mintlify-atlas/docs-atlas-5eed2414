@@ -1,0 +1,474 @@
+---
+title: Settings
+description: Complete reference for all game settings, recommended configurations, and advanced options
+---
+
+## Overview
+
+Minecraft Web Client provides extensive configuration options for graphics, controls, audio, interface, and gameplay. Settings are automatically saved to browser local storage and persist across sessions.
+
+## Accessing Settings
+
+<Steps>
+  <Step title="In-Game Menu">
+    Press **Escape** or open the pause menu, then click **Settings**
+  </Step>
+
+  <Step title="Browser Console">
+    Press **F12** to open developer console, then type:
+    ```javascript
+    options
+    ```
+    
+    On mobile, add `#dev` to the URL to enable console access.
+  </Step>
+
+  <Step title="Modify Settings">
+    Change settings via console:
+    ```javascript
+    options.renderDistance = 8
+    options.fov = 90
+    ```
+  </Step>
+</Steps>
+
+## Recommended Settings
+
+From the README (lines 43-49):
+
+```yaml
+Controls:
+  Touch Controls Type: Joystick
+  Auto Full Screen: On
+
+Interface:
+  Enable Minimap: Always
+
+Controls:
+  Raw Input: On (enabled by default)
+
+Interface:
+  Chat Select: On (enabled by default)
+```
+
+## Graphics Settings
+
+### Render Distance
+
+```javascript
+renderDistance: 3              // Singleplayer default
+multiplayerRenderDistance: 3   // Multiplayer default
+keepChunksDistance: 1          // Extra chunks to keep loaded
+```
+
+<Note>
+Higher render distance improves view range but increases memory usage and GPU load.
+</Note>
+
+### Field of View (FOV)
+
+```javascript
+fov: 75  // Default: 75 degrees (60-110 recommended)
+```
+
+### Lighting & Rendering
+
+```javascript
+smoothLighting: true           // Smooth lighting between blocks
+newVersionsLighting: false     // Use newer lighting algorithm
+dayCycleAndLighting: true      // Enable day/night cycle
+starfieldRendering: true       // Render stars at night
+defaultSkybox: true            // Show default sky
+```
+
+### Visual Effects
+
+```javascript
+viewBobbing: true              // Camera bobbing when walking
+showHand: true                 // Show player hand
+renderEntities: true           // Render mobs and players
+loadPlayerSkins: true          // Download and show player skins
+renderEars: true               // Render deadmau5 ears
+```
+
+### Performance
+
+```javascript
+frameLimit: false              // Limit FPS (number or false)
+backgroundRendering: '20fps'   // Background tab rendering
+                               // 'full' | '20fps' | '5fps'
+lowMemoryMode: false           // Reduce memory usage
+numWorkers: 4                  // Mesher worker threads
+```
+
+### GPU Settings
+
+```javascript
+gpuPreference: 'default'       // 'default' | 'high-performance' | 'low-power'
+```
+
+<Tabs>
+  <Tab title="Default (Auto)">
+    Let browser choose GPU (integrated or dedicated)
+  </Tab>
+  <Tab title="High Performance">
+    Force dedicated GPU on laptops with dual graphics
+  </Tab>
+  <Tab title="Low Power">
+    Force integrated GPU for battery saving
+  </Tab>
+</Tabs>
+
+### Advanced Rendering
+
+```javascript
+activeRenderer: 'threejs'                    // Rendering engine
+rendererSharedOptions: {
+  _experimentalSmoothChunkLoading: true,     // Smooth chunk loading
+  _renderByChunks: false                     // Chunk-based rendering
+}
+rendererPerfDebugOverlay: false              // Show performance overlay
+```
+
+## Controls Settings
+
+### Mouse
+
+```javascript
+mouseSensX: 50                 // Horizontal sensitivity (1-100)
+mouseSensY: -1                 // Vertical sensitivity (-1 = match X)
+mouseRawInput: true            // Use raw pointer lock movement
+preciseMouseInput: false       // More precise mouse tracking
+```
+
+### Touch Controls
+
+```javascript
+touchMovementType: 'modern'    // 'modern' (joystick) | 'classic' (split)
+touchInteractionType: 'classic' // 'classic' (tap) | 'buttons'
+touchButtonsSize: 40           // Button size in pixels
+touchButtonsOpacity: 80        // Button opacity (0-100)
+touchButtonsPosition: 12       // Distance from edge (%)
+```
+
+See [Mobile & Touch Controls](/features/mobile-touch) for details.
+
+### Gamepad
+
+From `src/controls.ts:119`:
+
+```javascript
+gamepadPollingInterval: 10     // Poll gamepad every 10ms
+```
+
+See [Controller Support](/features/controller-support) for button mappings.
+
+### Camera
+
+```javascript
+defaultPerspective: 'first_person'  // 'first_person' | 'third_person_back' | 'third_person_front'
+```
+
+## Audio Settings
+
+```javascript
+volume: 50                     // Master volume (0-100)
+enableMusic: true              // Enable background music
+musicVolume: 25                // Music volume (0-100)
+mutedSounds: []                // Array of muted sound IDs
+```
+
+## Interface Settings
+
+### GUI
+
+```javascript
+guiScale: 3                    // GUI scale (1-4)
+autoFullScreen: false          // Auto-enter fullscreen on join
+autoExitFullscreen: false      // Auto-exit fullscreen on disconnect
+```
+
+### Chat
+
+```javascript
+chatWidth: 320                 // Chat width in pixels
+chatHeight: 180                // Chat height in pixels
+chatScale: 100                 // Chat scale percentage
+chatOpacity: 100               // Chat opacity when focused (0-100)
+chatOpacityOpened: 100         // Chat opacity when typing (0-100)
+messagesLimit: 200             // Max messages to keep
+chatSelect: true               // Enable text selection in chat
+chatVanillaRestrictions: true  // Enforce vanilla chat limits
+chatPingExtension: true        // Show ping in chat
+chatSpellCheckEnabled: false   // Spell check in chat input
+```
+
+### Minimap
+
+```javascript
+showMinimap: 'never'           // 'always' | 'singleplayer' | 'never'
+minimapOptimizations: true     // Enable minimap performance opts
+```
+
+See [Minimap](/features/minimap) for details.
+
+### HUD Elements
+
+```javascript
+displayBossBars: true          // Show boss health bars
+topRightTimeDisplay: 'only-fullscreen'  // 'only-fullscreen' | 'always' | 'never'
+displayLoadingMessages: true   // Show loading screen tips
+displayRecordButton: true      // Show packet recording button
+```
+
+## Gameplay Settings
+
+### Movement
+
+```javascript
+autoJump: 'auto'               // 'auto' | 'always' | 'never'
+autoParkour: false             // Auto-jump for parkour
+```
+
+### Creative Inventory
+
+```javascript
+jeiEnabled: true               // Enable JEI-like creative inventory
+                               // true | false | ['creative', 'survival', 'adventure', 'spectator']
+```
+
+### World Interaction
+
+```javascript
+autoSignEditor: true           // Auto-open sign editor
+wysiwygSignEditor: 'auto'      // WYSIWYG sign editor: 'auto' | 'always' | 'never'
+```
+
+### Respawn
+
+```javascript
+autoRespawn: false             // Automatically respawn on death
+```
+
+## Multiplayer Settings
+
+### Username
+
+```javascript
+localUsername: 'wanderer'      // Default username
+guestUsername: 'guest'         // Guest mode username
+askGuestName: true             // Prompt for guest name
+```
+
+### Server Features
+
+```javascript
+serversAutoVersionSelect: 'auto'  // 'auto' | 'latest' | '1.20.4' | <version>
+serverResourcePacks: 'prompt'     // 'prompt' | 'always' | 'never'
+```
+
+See [Resource Packs](/features/resource-packs) for server resource pack handling.
+
+## Singleplayer Settings
+
+### Auto Save
+
+```javascript
+singleplayerAutoSave: false    // Auto-save world periodically
+alwaysBackupWorldBeforeLoading: undefined  // Auto-backup before loading
+```
+
+### Local Server Options
+
+```javascript
+localServerOptions: {
+  gameMode: 1                  // Default game mode (0=survival, 1=creative)
+}
+```
+
+## Advanced Settings
+
+<Warning>
+These settings are experimental or for advanced users. Changing them incorrectly may cause issues.
+</Warning>
+
+### Debug
+
+```javascript
+renderDebug: 'basic'           // 'none' | 'basic' | 'advanced'
+debugLogNotFrequentPackets: false  // Log non-frequent packets
+showChunkBorders: false        // Show chunk boundaries (F3+G)
+showCursorBlockInSpectator: false  // Show block outline in spectator
+```
+
+### Resource Packs
+
+```javascript
+enabledResourcepack: null      // Name of enabled resource pack
+useVersionsTextures: 'latest'  // Texture version to use
+```
+
+From `src/defaultOptions.ts:46-48`.
+
+### Performance & Optimization
+
+```javascript
+waitForChunksRender: false     // Wait for chunks before moving
+                               // false | true | 'sp-only'
+neighborChunkUpdates: true     // Update neighboring chunks
+```
+
+### Experimental
+
+```javascript
+disableAssets: false           // Disable asset loading
+modsSupport: false             // Enable mods support
+modsAutoUpdate: 'check'        // 'check' | 'never' | 'always'
+vrSupport: true                // Show VR mode button
+vrPageGameRendering: false     // Render game on VR page
+experimentalClientSelfReload: false  // Client-side reload
+```
+
+### Network
+
+```javascript
+customChannels: 'websocket'    // Custom protocol channels
+remoteContentNotSameOrigin: false  // Allow remote content
+remoteSoundsSupport: false     // Download remote sounds
+remoteSoundsLoadTimeout: 500   // Sound load timeout (ms)
+```
+
+### System
+
+```javascript
+preventBackgroundTimeoutKick: false  // Prevent AFK kick when tabbed out
+preventSleep: false            // Prevent system sleep
+errorReporting: true           // Send error reports
+```
+
+## Default Options
+
+All default values from `src/defaultOptions.ts:1-129`:
+
+```typescript
+export const defaultOptions = {
+  renderDistance: 3,
+  keepChunksDistance: 1,
+  multiplayerRenderDistance: 3,
+  closeConfirmation: true,
+  autoFullScreen: false,
+  mouseRawInput: true,
+  autoExitFullscreen: false,
+  localUsername: 'wanderer',
+  mouseSensX: 50,
+  mouseSensY: -1,
+  chatWidth: 320,
+  chatHeight: 180,
+  chatScale: 100,
+  chatOpacity: 100,
+  chatOpacityOpened: 100,
+  messagesLimit: 200,
+  displayLoadingMessages: true,
+  volume: 50,
+  enableMusic: true,
+  musicVolume: 25,
+  fov: 75,
+  defaultPerspective: 'first_person',
+  guiScale: 3,
+  autoRequestCompletions: true,
+  touchButtonsSize: 40,
+  touchButtonsOpacity: 80,
+  touchButtonsPosition: 12,
+  touchMovementType: 'modern',
+  touchInteractionType: 'classic',
+  gpuPreference: 'default',
+  backgroundRendering: '20fps',
+  // ... and many more
+}
+```
+
+## Server-Safe Settings
+
+Servers can remotely change certain safe settings. From `src/defaultOptions.ts:167-204`:
+
+```typescript
+export const serverSafeSettings: Partial<Record<keyof typeof defaultOptions, true>> = {
+  remoteContentNotSameOrigin: true,
+  renderEars: true,
+  viewBobbing: true,
+  mouseRawInput: true,
+  preciseMouseInput: true,
+  showHand: true,
+  fov: true,
+  defaultPerspective: true,
+  volume: true,
+  musicVolume: true,
+  enableMusic: true,
+  smoothLighting: true,
+  // ... and more display/input settings
+}
+```
+
+<Note>
+Security-critical settings like `modsSupport` and `customChannels` cannot be changed by servers.
+</Note>
+
+## Resetting Settings
+
+Reset all settings to defaults:
+
+```javascript
+// Clear settings from localStorage
+localStorage.removeItem('options')
+location.reload()
+```
+
+## Viewing Changed Settings
+
+See which settings differ from defaults:
+
+```javascript
+debugChangedOptions
+```
+
+This global variable shows only non-default values.
+
+## Browser-Specific Notes
+
+### Opera Mini
+
+Disable mouse gestures in browser settings to avoid new tab opening on right-click-and-hold.
+
+### Vivaldi
+
+Disable **Raw Input** if experiencing mouse issues:
+```javascript
+options.mouseRawInput = false
+```
+
+## Platform Recommendations
+
+### Desktop
+- `renderDistance: 6-12`
+- `gpuPreference: 'high-performance'`
+- `numWorkers: 4-8`
+
+### Mobile
+- `renderDistance: 2-4`
+- `lowMemoryMode: true`
+- `touchMovementType: 'modern'`
+- `autoFullScreen: true`
+
+### Low-End Devices
+- `renderDistance: 2-3`
+- `lowMemoryMode: true`
+- `frameLimit: 30`
+- `backgroundRendering: '5fps'`
+- `smoothLighting: false`
+
+## See Also
+
+- [Mobile & Touch Controls](/features/mobile-touch) - Touch settings
+- [Controller Support](/features/controller-support) - Gamepad settings
+- [Resource Packs](/features/resource-packs) - Resource pack configuration
+- [Keybindings](/customize/keybindings) - Customize controls

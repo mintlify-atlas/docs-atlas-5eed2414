@@ -1,0 +1,438 @@
+---
+title: Docker Deployment
+description: Deploy Minecraft Web Client using Docker for production and development
+---
+
+## Overview
+
+The project includes two Dockerfile configurations for different deployment scenarios:
+
+1. **Main Dockerfile** - Full web app with built-in proxy server
+2. **Dockerfile.proxy** - Standalone proxy server only
+
+<Note>
+Using Docker eliminates the need for manual Node.js, pnpm, and dependency installation steps from CONTRIBUTING.md.
+</Note>
+
+## Main Dockerfile (Full Application)
+
+The main Dockerfile builds the complete Minecraft Web Client with proxy support for production deployment.
+
+### Build Arguments
+
+The Dockerfile accepts several build arguments for customization:
+
+```dockerfile
+ARG DOWNLOAD_SOUNDS=false
+ARG DISABLE_SERVICE_WORKER=false
+ARG CONFIG_JSON_SOURCE=REMOTE
+```
+
+**Available Arguments:**
+
+- `DOWNLOAD_SOUNDS` - Download sound files during build (default: `false`)
+- `DISABLE_SERVICE_WORKER` - Disable service worker for offline support (default: `false`)
+- `CONFIG_JSON_SOURCE` - Configuration source: `REMOTE` or `LOCAL` (default: `REMOTE`)
+
+### Building the Image
+
+<Steps>
+  <Step title="Basic Build">
+    Build with default settings:
+    ```bash
+    docker build -t minecraft-web-client .
+    ```
+  </Step>
+
+  <Step title="Build with Sounds">
+    Include sound files in the image:
+    ```bash
+    docker build \
+      --build-arg DOWNLOAD_SOUNDS=true \
+      -t minecraft-web-client .
+    ```
+  </Step>
+
+  <Step title="Custom Configuration">
+    Use local configuration:
+    ```bash
+    docker build \
+      --build-arg CONFIG_JSON_SOURCE=LOCAL \
+      --build-arg DISABLE_SERVICE_WORKER=true \
+      -t minecraft-web-client .
+    ```
+  </Step>
+</Steps>
+
+### Running the Container
+
+```bash
+docker run -p 8080:8080 minecraft-web-client
+```
+
+**With custom configuration volume:**
+
+```bash
+docker run -p 8080:8080 \
+  -v $(pwd)/public:/app/public \
+  minecraft-web-client
+```
+
+Access the application at `http://localhost:8080`
+
+### Dockerfile Structure
+
+The main Dockerfile uses a multi-stage build for optimization:
+
+```dockerfile
+# ---- Build Stage ----
+FROM node:18-alpine AS build
+RUN apk add git
+WORKDIR /app
+COPY . /app
+RUN corepack enable
+
+# Prepare and install
+RUN node ./scripts/dockerPrepare.mjs
+RUN pnpm i
+
+# Download sounds if enabled
+RUN if [ "$DOWNLOAD_SOUNDS" = "true" ] ; then \
+    node scripts/downloadSoundsMap.mjs ; fi
+
+# Build for production
+RUN DISABLE_SERVICE_WORKER=$DISABLE_SERVICE_WORKER \
+    CONFIG_JSON_SOURCE=$CONFIG_JSON_SOURCE \
+    pnpm run build
+
+# ---- Run Stage ----
+FROM node:18-alpine
+RUN apk add git
+WORKDIR /app
+
+# Copy build artifacts
+COPY --from=build /app/dist /app/dist
+COPY server.js /app/server.js
+
+# Install runtime dependencies
+RUN npm i -g pnpm@10.8.0
+RUN npm init -yp
+RUN pnpm i express \
+    github:zardoy/prismarinejs-net-browserify \
+    compression cors
+
+EXPOSE 8080
+VOLUME /app/public
+ENTRYPOINT ["node", "server.js", "--prod"]
+```
+
+### Environment Variables
+
+Pass environment variables at runtime:
+
+```bash
+docker run -p 8080:8080 \
+  -e NODE_ENV=production \
+  -e TIMEOUT=15000 \
+  -e LOG=true \
+  minecraft-web-client
+```
+
+**Available Variables:**
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `NODE_ENV` | Environment mode | `production` (with --prod flag) |
+| `TIMEOUT` | Connection timeout (ms) | `10000` |
+| `LOG` | Enable connection logging | `false` |
+
+## Proxy Dockerfile (Standalone Proxy)
+
+For deploying only the proxy server without the full web application.
+
+### Building the Proxy Image
+
+```bash
+docker build . -f Dockerfile.proxy -t minecraft-web-proxy
+```
+
+### Running the Proxy Container
+
+```bash
+docker run -p 8080:8080 minecraft-web-proxy
+```
+
+### Proxy Dockerfile Structure
+
+```dockerfile
+# ---- Run Stage ----
+FROM node:18-alpine
+RUN apk add git
+WORKDIR /app
+COPY server.js /app/server.js
+
+# Install server dependencies
+RUN npm i -g pnpm@9.0.4
+RUN npm init -yp
+RUN pnpm i express \
+    github:zardoy/prismarinejs-net-browserify \
+    compression cors
+
+EXPOSE 8080
+ENTRYPOINT ["node", "server.js"]
+```
+
+<Note>
+The proxy Dockerfile is much smaller since it doesn't include the build stage or web application files.
+</Note>
+
+## Docker Compose
+
+For easier orchestration, use Docker Compose:
+
+### Full Application
+
+```yaml
+version: '3.8'
+
+services:
+  minecraft-web-client:
+    build:
+      context: .
+      args:
+        DOWNLOAD_SOUNDS: "false"
+        DISABLE_SERVICE_WORKER: "false"
+        CONFIG_JSON_SOURCE: "REMOTE"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=production
+      - TIMEOUT=10000
+      - LOG=false
+    restart: unless-stopped
+```
+
+### Proxy Only
+
+```yaml
+version: '3.8'
+
+services:
+  minecraft-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG=true
+      - TIMEOUT=15000
+    restart: unless-stopped
+```
+
+### Start with Docker Compose
+
+```bash
+# Start in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+## Production Best Practices
+
+<AccordionGroup>
+  <Accordion title="Enable CORS Properly">
+    The server includes CORS support by default:
+    ```javascript
+    const cors = require('cors')
+    app.use(cors())
+    ```
+    
+    For production, consider restricting origins:
+    ```javascript
+    app.use(cors({
+      origin: 'https://yourdomain.com'
+    }))
+    ```
+  </Accordion>
+
+  <Accordion title="Use Volume Mounts for Configuration">
+    Mount a local directory for runtime configuration:
+    ```bash
+    docker run -p 8080:8080 \
+      -v $(pwd)/public:/app/public:ro \
+      minecraft-web-client
+    ```
+    
+    Place custom `config.json` in the `public` directory.
+  </Accordion>
+
+  <Accordion title="Enable Compression">
+    The server uses compression middleware by default:
+    ```javascript
+    const compression = require('compression')
+    app.use(compression())
+    ```
+    
+    This reduces bandwidth usage significantly.
+  </Accordion>
+
+  <Accordion title="Set SharedArrayBuffer Headers">
+    For production mode, security headers are automatically set:
+    ```javascript
+    if (isProd) {
+      app.use((req, res, next) => {
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
+        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
+        next()
+      })
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Reverse Proxy Configuration
+
+### Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name play.example.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Caddy
+
+```caddyfile
+play.example.com {
+    reverse_proxy localhost:8080
+}
+```
+
+## Health Checks
+
+Add health check to your Docker configuration:
+
+```yaml
+services:
+  minecraft-web-client:
+    # ... other config
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+## Resource Limits
+
+Set memory and CPU limits:
+
+```yaml
+services:
+  minecraft-web-client:
+    # ... other config
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+```
+
+## Debugging Containers
+
+### View Container Logs
+
+```bash
+# Follow logs
+docker logs -f <container_id>
+
+# Last 100 lines
+docker logs --tail 100 <container_id>
+```
+
+### Execute Commands in Running Container
+
+```bash
+# Open shell
+docker exec -it <container_id> sh
+
+# Check running processes
+docker exec <container_id> ps aux
+```
+
+### Inspect Container
+
+```bash
+docker inspect <container_id>
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Build Fails: Git Not Found">
+    The Dockerfile installs git in the Alpine image:
+    ```dockerfile
+    RUN apk add git
+    ```
+    
+    Ensure this line is present in your Dockerfile.
+  </Accordion>
+
+  <Accordion title="Container Exits Immediately">
+    Check logs for errors:
+    ```bash
+    docker logs <container_id>
+    ```
+    
+    Verify the entrypoint:
+    ```bash
+    docker inspect <container_id> | grep ENTRYPOINT
+    ```
+  </Accordion>
+
+  <Accordion title="Port Already in Use">
+    Use a different host port:
+    ```bash
+    docker run -p 3000:8080 minecraft-web-client
+    ```
+  </Accordion>
+
+  <Accordion title="Volume Mount Not Working">
+    Ensure the path exists and has correct permissions:
+    ```bash
+    mkdir -p public
+    chmod 755 public
+    docker run -v $(pwd)/public:/app/public minecraft-web-client
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- [Proxy Setup](/advanced/proxy-setup) - Configure proxy servers
+- [Debugging](/advanced/debugging) - Debug the application
+- [Contributing](/advanced/contributing) - Contribute to the project

@@ -1,0 +1,502 @@
+---
+title: Contributing Guide
+description: Set up the development environment and contribute to Minecraft Web Client
+---
+
+## Getting Started
+
+After forking the repository, follow these steps to get the development environment running:
+
+<Steps>
+  <Step title="Install Node.js">
+    Ensure you have [Node.js](https://nodejs.org) installed (tested on v22.x):
+    ```bash
+    node -v
+    ```
+    
+    Enable corepack:
+    ```bash
+    corepack enable
+    ```
+    
+    <Note>
+    If you get `Cannot find matching keyid`, update corepack:
+    ```bash
+    npm i -g corepack
+    ```
+    </Note>
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all project dependencies:
+    ```bash
+    pnpm i
+    ```
+  </Step>
+
+  <Step title="Start Development">
+    Start the project in development mode:
+    ```bash
+    pnpm start
+    ```
+    
+    Or build for production:
+    ```bash
+    pnpm build
+    ```
+  </Step>
+
+  <Step title="Start Contributing">
+    Read the [Tasks Categories](#tasks-categories) and [Workflow](#workflow) sections below, then start coding!
+  </Step>
+</Steps>
+
+## Project Structure
+
+The project consists of three main parts:
+
+### 1. Core (`src/`)
+
+The main application source code that integrates all other parts.
+
+**Technology:** Originally Webpack, migrated to Esbuild, now using **Rsbuild**.
+
+**Scripts:**
+```bash
+# Start development server
+pnpm start
+pnpm dev-rsbuild  # Without proxy server
+
+# Build for production
+pnpm build
+```
+
+**Key Directories:**
+
+- `src/` - Main app source code
+- `src/react/` - React components and UI
+  - Almost all UI components are here
+  - Each component has a base (reused in app and storybook)
+  - Providers wrap components and supply context
+  - Check `DeathScreen` component as an example
+
+### 2. Renderer (`renderer/`)
+
+Improved version of [prismarine-viewer](https://github.com/PrismarineJS/prismarine-viewer) for rendering the game world.
+
+**Key Files:**
+
+- `renderer/viewer/lib/worldrenderer.ts` - Adds objects to Three.js (sections)
+- `renderer/viewer/lib/models.ts` - Prepares rendering data (blocks) in worker
+- `renderer/playground/playground.ts` - Playground for testing rendering
+
+**Playground Scripts:**
+```bash
+# Start playground + mesher + server
+pnpm run-playground
+
+# Watch mode
+pnpm watch-playground
+
+# Build
+pnpm build-playground
+```
+
+**Mesher Scripts:**
+```bash
+# Watch mesher worker
+pnpm watch-mesher
+
+# Build mesher
+pnpm build-mesher
+```
+
+### 3. Storybook (`.storybook/`)
+
+Tool for developing and testing React components in isolation.
+
+**Location:** All stories are in `src/react/**/*.stories.tsx`
+
+**Scripts:**
+```bash
+# Start Storybook
+pnpm storybook
+
+# Build static Storybook
+pnpm build-storybook
+```
+
+## Development Scripts
+
+### Common Commands
+
+```bash
+# Start main app + playground
+pnpm run-all
+
+# Start everything except Storybook and tests
+pnpm run-all
+
+# Run linter
+pnpm lint
+
+# Fix linting issues
+pnpm lint-fix
+
+# Type checking
+tsc
+```
+
+### Testing
+
+```bash
+# Unit tests (Vitest)
+pnpm test-unit
+
+# E2E tests (Cypress)
+pnpm test-mc-server  # Start test server first
+pnpm prod-start      # In another terminal
+pnpm test:cypress    # Run tests
+
+# Open Cypress UI
+pnpm test:cypress:open
+
+# Benchmark tests
+pnpm test:benchmark
+```
+
+### Production Build
+
+```bash
+# Build everything
+pnpm build
+
+# Start production server
+pnpm prod-start
+
+# Or use start-prod after building
+pnpm start-prod
+```
+
+## Architecture Details
+
+### How Modules Work
+
+**Mineflayer:**
+- Provides the `bot` variable
+- Wrapper for `node-minecraft-protocol`
+- Used to connect and interact with Minecraft servers
+- Not all events are exposed - sometimes need `bot._client.on('packet_name', ...)`
+- Supports most mineflayer plugins
+
+**Example:**
+```javascript
+// Standard mineflayer API
+bot.on('spawn', () => {
+  console.log('Spawned!')
+})
+
+// Access underlying client for packets
+bot._client.on('entity_metadata', (packet) => {
+  console.log('Entity metadata:', packet)
+})
+```
+
+## Tasks Categories
+
+Contributions are welcome in these areas (ordered by current priority):
+
+### 1. Client-Side Logic (High Priority)
+
+Everything related to client-side packets and server compatibility.
+
+**Priority Tasks:**
+- Rewrite or fix physics logic (use Botcraft or Grim as reference)
+- Implement basic minecart/boat/horse riding
+- Fix auto-jump module (false triggers, performance)
+- Investigate connection issues with specific servers
+- Set up automated testing against anti-cheat plugins
+
+**Goals:**
+- Make more servers playable
+- Fix anti-cheat detection issues
+
+**Debugging Tips:**
+```javascript
+// Enable packet logging
+options.debugLogNotFrequentPackets = true
+
+// Or record and replay packets
+// Settings → Advanced → Enable Packets Replay
+```
+
+### 2. Three.js Renderer
+
+Improve and fix rendering issues.
+
+**Example Tasks:**
+- Improve/fix entity rendering
+- Update entities on specific packets
+- Investigate performance issues
+- Work on playground code
+
+**Goals:**
+- Fix entity rendering issues (including position updates)
+- Implement camera mode switching (first/third person)
+- Add animated blocks
+- Add armor rendering
+
+**Tip:** Learn how to use Three.js helpers and additional cameras (e.g., `setScissor`)
+
+### 3. Server-Side Logic
+
+Contribute to Flying Squid fork ([space-squid](https://github.com/zardoy/space-squid)).
+
+**Example Tasks:**
+- Add missing commands (e.g., `/scoreboard`)
+- Basic physics (fall damage, falling blocks)
+- Entity AI (spawning, attacking)
+- PvP implementation
+- Emit packets on specific events
+- Make adventure maps playable
+
+**Long-Term Goals:**
+- Make most adventure maps playable
+- Enable game completion from scratch (crafting, dimensions, terrain)
+- Make Bedwars playable
+
+### 4. Frontend/UI
+
+Create new React components and improve UI (including mobile support).
+
+**Examples:**
+- New UI screens
+- Mobile touch controls improvements
+- Accessibility features
+- Settings UI enhancements
+
+## Development Workflow
+
+<Steps>
+  <Step title="Identify the Problem">
+    - Test on public server or local setup
+    - Create reproducible environment
+    - Document the issue
+  </Step>
+
+  <Step title="Debug and Isolate">
+    - Use browser DevTools
+    - Enable packet logging if needed
+    - Use debugger to step through code
+    - Isolate the root cause
+  </Step>
+
+  <Step title="Develop and Test">
+    - Write fix or feature
+    - Test thoroughly
+    - Add tests if possible (unit or E2E)
+  </Step>
+
+  <Step title="Verify Solution">
+    - Repeat step 1 to confirm fix
+    - Test edge cases
+    - Ensure no regressions
+  </Step>
+</Steps>
+
+## Making Protocol Changes
+
+When working with Minecraft protocol:
+
+### Protocol Documentation
+
+- Latest version: [wiki.vg/Protocol](https://wiki.vg/Protocol)
+- Previous versions: [wiki.vg/Protocol_version_numbers](https://wiki.vg/Protocol_version_numbers)
+
+### Generated Packet Files
+
+- `src/generatedClientPackets.ts` - Server → Client packets
+- `src/generatedServerPackets.ts` - Client → Server packets
+
+These are generated from [minecraft-data](https://github.com/prismarineJS/minecraft-data).
+
+## Linking Dependencies Locally
+
+To test changes in dependencies like flying-squid:
+
+```json
+// package.json
+{
+  "pnpm": {
+    "overrides": {
+      "flying-squid": "file:../space-squid"
+    }
+  }
+}
+```
+
+Or use pnpm link:
+```bash
+cd ../space-squid
+pnpm link .
+cd ../minecraft-web-client
+pnpm link flying-squid
+```
+
+## Updating Dependencies
+
+<Steps>
+  <Step title="Update Git Dependencies">
+    Check and update git-based dependencies:
+    ```bash
+    pnpm update-git-deps
+    ```
+    
+    This will:
+    - Show which git dependencies have updates
+    - Ask if you want to update them
+    - Skip dependencies in `pnpm.updateConfig.ignoreDependencies`
+  </Step>
+
+  <Step title="Update PrismarineJS Packages">
+    Update to latest versions:
+    - `minecraft-data` (update version twice in package.json)
+    - `mineflayer`
+    - `minecraft-protocol`
+    - `prismarine-block`
+    - `prismarine-chunk`
+    - `prismarine-item`
+  </Step>
+
+  <Step title="Handle minecraft-protocol Patch">
+    If the patch fails:
+    
+    ```bash
+    # 1. Remove patch from package.json patchedDependencies
+    
+    # 2. Create patch directory
+    pnpm patch minecraft-protocol
+    
+    # 3. Apply patch manually
+    cd /path/to/patch/dir
+    patch -p1 < minecraft-protocol@version.patch
+    
+    # 4. Update the patch
+    pnpm patch-commit /path/to/patch/dir
+    ```
+  </Step>
+</Steps>
+
+## Development Tips
+
+<AccordionGroup>
+  <Accordion title="Fast Development Reload">
+    Press `Y` in-game to reload the application into the same world/server.
+  </Accordion>
+
+  <Accordion title="React Profiling">
+    To enable React profiling:
+    1. Disable `REACT_APP_PROFILING` code first
+    2. Use React DevTools Profiler
+  </Accordion>
+
+  <Accordion title="Use the Debugger">
+    VSCode has excellent debugging support. Use `--no-sources` flag for faster source map parsing.
+  </Accordion>
+
+  <Accordion title="Clear Cache">
+    If things don't work after upgrading dependencies:
+    ```bash
+    rm -rf dist/
+    ```
+  </Accordion>
+
+  <Accordion title="Production Testing">
+    The same `dist` folder is used for dev and prod builds. Test production builds before deploying.
+  </Accordion>
+</AccordionGroup>
+
+## Testing Guidelines
+
+### Unit Tests
+
+Location: `**/*.test.ts` files in `src/` and `renderer/`
+
+```bash
+pnpm test-unit
+```
+
+<Note>
+We're working to improve test coverage. Contributions of tests are very welcome!
+</Note>
+
+### Cypress E2E Tests
+
+Location: `cypress/` folder
+
+```bash
+# Terminal 1: Start test Minecraft server
+pnpm test-mc-server
+
+# Terminal 2: Start production build
+pnpm prod-start
+
+# Terminal 3: Run tests
+pnpm test:cypress
+```
+
+To test with dev server (port 3000), update the Cypress configuration.
+
+## Pull Request Guidelines
+
+1. **Let us know** what you're working on (GitHub issue or Discord)
+2. **Test thoroughly** before opening PR
+3. **Allow maintainer edits** when opening the PR
+4. **Follow the workflow** outlined above
+5. **Add tests** if possible
+6. **Update documentation** if needed
+
+<Warning>
+If CI fails on the `next` branch, feel free to use the latest commit from the `release` branch. We'll update the base branch ASAP.
+</Warning>
+
+## Getting Help
+
+- **GitHub Issues:** Report bugs or request features
+- **Discord:** Ask questions and discuss development
+- **Documentation:** Check existing docs and code comments
+
+## Code Style
+
+The project uses ESLint for code style:
+
+```bash
+# Check for issues
+pnpm lint
+
+# Auto-fix issues
+pnpm lint-fix
+```
+
+Key style points:
+- TypeScript for all new code
+- Follow existing patterns in the codebase
+- Comment complex logic
+- Use meaningful variable names
+
+## Useful Resources
+
+- [Mineflayer Documentation](https://github.com/PrismarineJS/mineflayer/blob/master/docs/api.md)
+- [Minecraft Protocol Documentation](https://wiki.vg/Protocol)
+- [Three.js Documentation](https://threejs.org/docs/)
+- [PrismarineJS GitHub](https://github.com/PrismarineJS)
+
+## Next Steps
+
+- [Debugging](/advanced/debugging) - Learn debugging techniques
+- [Proxy Setup](/advanced/proxy-setup) - Set up development proxy
+- [Docker](/advanced/docker) - Use Docker for development
+
+---
+
+Happy coding! If you have any questions, feel free to ask on GitHub or Discord.

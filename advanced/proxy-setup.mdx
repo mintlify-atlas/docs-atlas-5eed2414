@@ -1,0 +1,291 @@
+---
+title: Proxy Server Setup
+description: Set up and deploy proxy servers for connecting to Minecraft servers
+---
+
+## Overview
+
+Proxy servers enable the Minecraft Web Client to connect to Java Minecraft servers using the TCP protocol. The proxy creates a WebSocket connection between your browser and the Minecraft server, bridging the protocol gap without any packet deserialization.
+
+<Note>
+The proxy server simply forwards packets between the client and Minecraft server without processing them. All Minecraft protocol packets are handled directly in your browser.
+</Note>
+
+## How Proxies Work
+
+```mermaid
+graph LR
+    A[Web App - Client] --> C[Proxy Server]
+    C --> B[Minecraft Server]
+    style A fill:#f9d,stroke:#333,stroke-width:2px
+    style B fill:#fc0,stroke:#333,stroke-width:2px
+    style C fill:#fff,stroke:#333,stroke-width:2px
+```
+
+When you connect to a server through a proxy:
+
+1. Your browser establishes a WebSocket connection to the proxy server
+2. The proxy connects to the Minecraft server via TCP
+3. All packets are forwarded in both directions without modification
+4. Your browser processes all Minecraft protocol packets directly
+
+<Warning>
+Proxy location affects latency significantly. If both you and the Minecraft server are in Europe, expect ~40ms ping. Cross-continent connections may result in >200ms ping.
+</Warning>
+
+## Self-Hosting a Proxy
+
+### Quick Start
+
+<Steps>
+  <Step title="Clone and Install">
+    Clone the repository and install dependencies:
+    ```bash
+    git clone https://github.com/zardoy/minecraft-web-client.git
+    cd minecraft-web-client
+    pnpm i
+    ```
+  </Step>
+
+  <Step title="Start the Proxy Server">
+    Run the production server:
+    ```bash
+    pnpm prod-start
+    ```
+    
+    The proxy will be available at `http://localhost:8080`
+  </Step>
+
+  <Step title="Configure the Client">
+    In the web client, specify your proxy server URL in the proxy field:
+    ```
+    http://localhost:8080
+    ```
+  </Step>
+</Steps>
+
+### Server Configuration
+
+The proxy server (`server.js`) accepts several configuration options:
+
+#### Command Line Arguments
+
+```bash
+node server.js [options] [port]
+```
+
+**Available Options:**
+
+- `--prod` - Run in production mode
+- `--log` - Enable connection logging
+- `--timeout <ms>` - Set connection timeout (default: 10000ms)
+- Port number - Specify custom port (default: 8080)
+
+**Examples:**
+
+```bash
+# Production mode on port 8080
+node server.js --prod
+
+# Custom port with logging
+node server.js --log 3000
+
+# Custom timeout (20 seconds)
+node server.js --timeout 20000
+```
+
+#### Environment Variables
+
+```bash
+# Production mode
+NODE_ENV=production
+
+# Connection timeout in milliseconds
+TIMEOUT=15000
+
+# Enable connection logging
+LOG=true
+```
+
+### Configuration File
+
+The proxy reads from `config.json` to set defaults:
+
+```json
+{
+  "defaultProxy": "https://proxy.mcraft.fun",
+  "defaultHost": "<from-proxy>"
+}
+```
+
+For custom deployments, you can override settings in `public/config.json`:
+
+```json
+{
+  "defaultProxy": ""
+}
+```
+
+<Note>
+Setting `defaultProxy` to an empty string tells the client to use the current server URL as the proxy.
+</Note>
+
+## Cloud Deployment
+
+### Deploy to Koyeb
+
+Click the button below for one-click deployment:
+
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?name=minecraft-web-client&type=git&repository=zardoy%2Fminecraft-web-client&branch=next&builder=dockerfile&env%5B%5D=&ports=8080%3Bhttp%3B%2F)
+
+### Other Platforms
+
+The proxy can be deployed to any platform supporting Node.js or Docker:
+
+- **Heroku**: Use the included `Dockerfile.proxy`
+- **Railway**: Connect your GitHub repository
+- **Vercel**: Limited support (WebSocket restrictions)
+- **VPS**: Any Linux server with Node.js 18+
+
+<Accordion title="Example: Deploy to VPS">
+  ```bash
+  # Install Node.js 18+ and pnpm
+  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+  npm install -g pnpm
+
+  # Clone and build
+  git clone https://github.com/zardoy/minecraft-web-client.git
+  cd minecraft-web-client
+  pnpm i
+  pnpm build
+
+  # Run with PM2 (process manager)
+  npm install -g pm2
+  pm2 start server.js --name mc-proxy -- --prod
+  pm2 save
+  pm2 startup
+  ```
+</Accordion>
+
+## mwc-proxy: Standalone Proxy
+
+For making **your own** Minecraft server accessible to web clients, use [mwc-proxy](https://github.com/zardoy/mwc-proxy) - a lightweight WebSocket proxy.
+
+### Features
+
+- Runs alongside your Minecraft server
+- Minimal resource usage
+- Direct connections via `wss://play.example.com`
+- Automatic client detection via `?client_mcraft` URL parameter
+
+### Installation
+
+```bash
+git clone https://github.com/zardoy/mwc-proxy.git
+cd mwc-proxy
+npm install
+```
+
+### Configuration
+
+```javascript
+// config.js
+module.exports = {
+  port: 8080,
+  minecraftServer: {
+    host: 'localhost',
+    port: 25565
+  }
+}
+```
+
+### Running
+
+```bash
+node index.js
+```
+
+Players can now connect to your server using:
+```
+wss://play.example.com?client_mcraft
+```
+
+## CORS Configuration
+
+For proper proxy operation, ensure CORS headers are configured:
+
+```javascript
+const cors = require('cors')
+app.use(cors())
+```
+
+The default configuration allows all origins (`allowOrigin: '*'`).
+
+## Monitoring and Logs
+
+Enable logging to monitor connections:
+
+```bash
+node server.js --log
+```
+
+This will log:
+- New WebSocket connections
+- Minecraft server connections
+- Connection errors and timeouts
+- Disconnections
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection Timeout">
+    Increase the timeout value if connecting to distant servers:
+    ```bash
+    node server.js --timeout 30000
+    ```
+  </Accordion>
+
+  <Accordion title="CORS Errors">
+    Ensure your proxy has CORS enabled and accepts requests from your web client domain.
+  </Accordion>
+
+  <Accordion title="High Latency">
+    Use a proxy server geographically close to both you and the Minecraft server for best performance.
+  </Accordion>
+
+  <Accordion title="WebSocket Connection Failed">
+    - Check firewall rules allow outbound WebSocket connections
+    - Verify the proxy server is running and accessible
+    - Ensure you're using the correct protocol (ws:// or wss://)
+  </Accordion>
+</AccordionGroup>
+
+## Security Considerations
+
+<Warning>
+**Production Deployments:**
+- Use HTTPS/WSS connections in production
+- Implement rate limiting to prevent abuse
+- Consider authentication for private proxies
+- Monitor resource usage to prevent DoS attacks
+</Warning>
+
+### Rate Limiting Example
+
+```javascript
+const rateLimit = require('express-rate-limit')
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+})
+
+app.use(limiter)
+```
+
+## Next Steps
+
+- [Docker Deployment](/advanced/docker) - Deploy using Docker containers
+- [Debugging](/advanced/debugging) - Debug proxy connections and packets
+- [Contributing](/advanced/contributing) - Contribute to the proxy code

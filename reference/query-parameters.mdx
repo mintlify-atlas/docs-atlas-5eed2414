@@ -1,0 +1,417 @@
+---
+title: Query Parameters
+description: URL query parameters for configuring the Minecraft Web Client
+---
+
+The Minecraft Web Client can be configured using URL query parameters. These allow you to customize behavior, pre-configure connections, and enable special features.
+
+<Note>
+  Press **Y** in-game to set query parameters to the URL based on your current game state.
+</Note>
+
+## General Parameters
+
+### Setting Configuration
+
+<ParamField query="setting" type="string" default="undefined">
+  Set and lock specific settings on load. Can be used multiple times for multiple settings.
+  
+  **Format:** `setting=<setting_name>:<setting_value>`
+  
+  **Examples:**
+  ```
+  ?setting=autoParkour:true
+  ?setting=renderDistance:4&setting=fov:90
+  ```
+  
+  <Warning>
+    Settings configured via URL parameters are locked and cannot be changed in-game until the parameter is removed.
+  </Warning>
+</ParamField>
+
+### Modal Control
+
+<ParamField query="modal" type="string" default="undefined">
+  Open a specific modal on page load. Use `,` as path separator for nested modals.
+  
+  **Examples:**
+  ```
+  ?modal=keybindings
+  ?modal=options,video
+  ```
+  
+  <Note>
+    To get the currently opened modal, type in console: `activeModalStack.at(-1).reactType`
+  </Note>
+</ParamField>
+
+### Replay Session
+
+<ParamField query="replayFileUrl" type="string" default="undefined">
+  Load and start a packet replay session from a URL. The file must be CORS enabled.
+  
+  **Example:**
+  ```
+  ?replayFileUrl=https://example.com/replay.dat
+  ```
+  
+  Use with other replay parameters for fine-tuned control:
+  - `replayFilter` - Filter packets by name pattern
+  - `replaySpeed` - Playback speed multiplier
+  - `replayValidateClient` - Validate client state
+  - `replayStopOnError` - Stop on validation errors
+  - `replaySkipMissingOnTimeout` - Skip missing packets
+  - `replayPacketsSenderDelay` - Delay between packets (ms)
+</ParamField>
+
+## Multiplayer Parameters
+
+These parameters configure multiplayer connections.
+
+### Server Connection
+
+<ParamField query="ip" type="string" default="undefined">
+  Pre-fill server address in the connect screen. Port can be added with `:<port>`.
+  
+  **Examples:**
+  ```
+  ?ip=play.example.com
+  ?ip=192.168.1.100:25565
+  ```
+</ParamField>
+
+<ParamField query="name" type="string" default="undefined">
+  Set the server name for saving to the server list.
+  
+  **Example:**
+  ```
+  ?ip=play.example.com&name=My%20Favorite%20Server
+  ```
+</ParamField>
+
+<ParamField query="version" type="string" default="undefined">
+  Set the Minecraft version to use for the connection.
+  
+  **Examples:**
+  ```
+  ?version=1.20.4
+  ?version=1.19.4
+  ```
+</ParamField>
+
+<ParamField query="proxy" type="string" default="undefined">
+  Set the proxy server address to use for connecting to Java servers.
+  
+  **Examples:**
+  ```
+  ?proxy=https://proxy.example.com
+  ?proxy=http://localhost:8080
+  ```
+  
+  <Note>
+    The proxy server bridges WebSocket connections from the browser to TCP Minecraft servers.
+  </Note>
+</ParamField>
+
+<ParamField query="username" type="string" default="undefined">
+  Pre-fill the username for the connection.
+  
+  **Example:**
+  ```
+  ?username=Steve
+  ```
+</ParamField>
+
+### Connection Control
+
+<ParamField query="lockConnect" type="boolean" default="false">
+  Only works when `ip` parameter is set. Disables cancel/save buttons and all inputs in the connect screen.
+  
+  **Use case:** Embedded iframes where you want to force specific server connection.
+  
+  **Example:**
+  ```
+  ?ip=play.example.com&version=1.20.4&lockConnect=true
+  ```
+</ParamField>
+
+<ParamField query="autoConnect" type="boolean" default="false">
+  Automatically connect to the specified server. Requires `ip` and `version` parameters, and `allowAutoConnect` must be enabled in config.json.
+  
+  **Example:**
+  ```
+  ?ip=play.example.com&version=1.20.4&autoConnect=true
+  ```
+  
+  <Warning>
+    Auto-connect must be explicitly enabled in the app configuration for security reasons.
+  </Warning>
+</ParamField>
+
+<ParamField query="serversList" type="string" default="undefined">
+  Load a custom server list from a comma-separated list or URL.
+  
+  **Formats:**
+  - Inline: `ip:version,ip:version`
+  - JSON URL: URL to array of servers
+  - Text URL: Line-delimited list of IPs
+  
+  **Examples:**
+  ```
+  ?serversList=play.hypixel.net:1.20.4,mc.mineplex.com:1.19.4
+  ?serversList=https://example.com/servers.json
+  ?serversList=https://example.com/servers.txt
+  ```
+</ParamField>
+
+<ParamField query="addPing" type="number" default="0">
+  Add artificial latency to both sides of the connection for testing.
+  
+  **Example:**
+  ```
+  ?addPing=100
+  ```
+  
+  This adds 200ms total to your ping (100ms each way).
+</ParamField>
+
+## Singleplayer Parameters
+
+These parameters control singleplayer world loading and creation.
+
+### Quick Start
+
+<ParamField query="singleplayer" type="boolean" default="false">
+  Create an empty world on load. Nothing will be saved to browser storage.
+  
+  **Aliases:** `sp`
+  
+  **Examples:**
+  ```
+  ?singleplayer=1
+  ?sp=1&version=1.20.4
+  ```
+</ParamField>
+
+<ParamField query="loadSave" type="string" default="undefined">
+  Load a saved world by folder name (not title) on page load.
+  
+  **Example:**
+  ```
+  ?loadSave=MyWorld-2024
+  ```
+</ParamField>
+
+### World Loading
+
+<ParamField query="map" type="string" default="undefined">
+  Load a world from a ZIP file URL. The URL must be CORS enabled.
+  
+  **Example:**
+  ```
+  ?map=https://example.com/world.zip
+  ```
+  
+  <Warning>
+    ZIP files are loaded entirely into RAM. There is a ~300 MB file limit on iOS.
+  </Warning>
+</ParamField>
+
+<ParamField query="mapDir" type="string" default="undefined">
+  Load a world from a file descriptor. This is the recommended and fastest way to load worlds but requires setup.
+  
+  **Format:** URL to JSON file or base64 encoded JSON
+  
+  **JSON Structure:**
+  ```json
+  {
+    "baseUrl": "https://example.com/world/",
+    "index": {
+      "level.dat": null,
+      "region": {
+        "r.-1.-1.mca": null,
+        "r.-1.0.mca": null,
+        "r.0.-1.mca": null,
+        "r.0.0.mca": null
+      }
+    }
+  }
+  ```
+  
+  **Examples:**
+  ```
+  ?mapDir=https://example.com/world/index.json
+  ?mapDir=data:application/json;base64,eyJiYXNlVXJsIjoi...
+  ```
+</ParamField>
+
+<ParamField query="mapDirBaseUrl" type="string" default="undefined">
+  Specify the base URL for fetching files when using base64 encoded `mapDir`.
+  
+  **Example:**
+  ```
+  ?mapDir=data:application/json;base64,...&mapDirBaseUrl=https://example.com/world/
+  ```
+</ParamField>
+
+<ParamField query="mapVersion" type="string" default="undefined">
+  Specify the Minecraft version for the loaded map.
+  
+  **Example:**
+  ```
+  ?map=https://example.com/world.zip&mapVersion=1.19.4
+  ```
+</ParamField>
+
+### Server Configuration
+
+<ParamField query="serverSetting" type="string" default="undefined">
+  Set local server options. Can be used multiple times.
+  
+  **Format:** `serverSetting=<key>:<value>`
+  
+  **Example:**
+  ```
+  ?serverSetting=noInitialChunksSend:true
+  ?serverSetting=gameMode:1&serverSetting=difficulty:2
+  ```
+  
+  See [space-squid options](https://github.com/zardoy/space-squid/tree/everything/src/modules.ts#L51) for available settings.
+</ParamField>
+
+<ParamField query="noSave" type="boolean" default="false">
+  Disable auto-save on unload/disconnect/export. Only manual save with `/save` command will work.
+  
+  **Example:**
+  ```
+  ?singleplayer=1&noSave=true
+  ```
+</ParamField>
+
+## Resource Packs
+
+<ParamField query="texturepack" type="string" default="undefined">
+  Load a specific texture pack on startup.
+  
+  **Example:**
+  ```
+  ?texturepack=faithful32x
+  ```
+</ParamField>
+
+## Development Parameters
+
+<Note>
+  These parameters are only available in development mode.
+</Note>
+
+<ParamField query="reconnect" type="boolean" default="false">
+  Automatically reconnect to the server on page reloads. Very useful for server testing.
+  
+  **Example:**
+  ```
+  ?reconnect=true
+  ```
+</ParamField>
+
+<ParamField query="playground" type="boolean" default="false">
+  Load the world renderer playground for testing.
+</ParamField>
+
+## Peer Connection Parameters
+
+<ParamField query="connectPeer" type="string" default="undefined">
+  Connect to a peer-hosted world using their peer ID.
+  
+  **Example:**
+  ```
+  ?connectPeer=abc123-def456
+  ```
+</ParamField>
+
+<ParamField query="peerVersion" type="string" default="undefined">
+  Specify the version for peer connection.
+  
+  **Example:**
+  ```
+  ?connectPeer=abc123&peerVersion=1.20.4
+  ```
+</ParamField>
+
+## Benchmark Parameters
+
+<ParamField query="openBenchmark" type="boolean" default="false">
+  Open the benchmark tool on load.
+</ParamField>
+
+<ParamField query="benchmarkMapZipUrl" type="string" default="undefined">
+  URL to a world ZIP file for benchmarking.
+</ParamField>
+
+<ParamField query="benchmarkPosition" type="string" default="undefined">
+  Starting position for the benchmark (format: `x,y,z`).
+</ParamField>
+
+<ParamField query="downloadBenchmark" type="boolean" default="false">
+  Automatically download benchmark results.
+</ParamField>
+
+## Advanced Parameters
+
+<ParamField query="command" type="string" default="undefined">
+  Execute a command on startup. Can be used multiple times.
+  
+  **Example:**
+  ```
+  ?command=/time set day
+  ```
+</ParamField>
+
+<ParamField query="viewerConnect" type="string" default="undefined">
+  Connect to a remote bot viewer session.
+</ParamField>
+
+<ParamField query="onlyConnect" type="boolean" default="false">
+  Show only the connect screen, hiding other options.
+</ParamField>
+
+<ParamField query="connectText" type="string" default="undefined">
+  Custom text to display on the connect screen.
+</ParamField>
+
+<ParamField query="freezeSettings" type="boolean" default="false">
+  Prevent settings from being changed.
+</ParamField>
+
+<ParamField query="parentFrameMods" type="boolean" default="false">
+  Enable parent frame modifications (for embedded usage).
+</ParamField>
+
+## Examples
+
+<CodeGroup>
+```url Auto-connect to Server
+https://mcraft.fun/?ip=mc.hypixel.net&version=1.20.4&autoConnect=true
+```
+
+```url Load World from URL
+https://mcraft.fun/?map=https://example.com/world.zip&mapVersion=1.19.4
+```
+
+```url Quick Singleplayer
+https://mcraft.fun/?singleplayer=1&version=1.20.4
+```
+
+```url Configure Settings
+https://mcraft.fun/?setting=renderDistance:8&setting=fov:90&setting=autoParkour:true
+```
+
+```url Custom Proxy
+https://mcraft.fun/?ip=play.example.com&version=1.20.4&proxy=http://localhost:8080
+```
+</CodeGroup>
+
+## See Also
+
+- [Console Commands](/reference/console-commands) - Built-in commands
+- [Global Variables](/reference/global-variables) - Console debugging variables

@@ -1,0 +1,216 @@
+---
+title: Resource Packs
+description: Learn how to use resource packs to customize textures, GUI, and server resource packs in Minecraft Web Client
+---
+
+## Overview
+
+Minecraft Web Client supports advanced resource pack functionality including custom textures, GUI elements, block models, and server resource packs. You can install resource packs from ZIP files and customize almost every visual aspect of the game.
+
+## Features
+
+- **Custom Textures**: Block textures, item textures, and armor models
+- **Custom GUI**: Replace UI elements with resource pack assets
+- **Block Models & Blockstates**: Custom block models and states
+- **Server Resource Packs**: Automatic download and installation from servers (with proper CORS)
+- **Multiple Namespaces**: Support for custom namespaces beyond `minecraft:`
+
+## Installing a Resource Pack
+
+<Steps>
+  <Step title="Prepare Your Resource Pack">
+    Ensure your resource pack is in ZIP format and contains a `pack.mcmeta` file at the root. The client will validate this file before installation.
+  </Step>
+
+  <Step title="Open the Game">
+    Launch Minecraft Web Client and connect to a world or server.
+  </Step>
+
+  <Step title="Install the Pack">
+    Drag and drop the resource pack ZIP file into the browser window, or use the in-game menu to select a file.
+
+    The installation process will:
+    - Validate the `pack.mcmeta` file
+    - Extract all files to the browser's file system
+    - Process textures, models, and blockstates
+    - Update the atlas textures
+  </Step>
+
+  <Step title="Enable the Pack">
+    After installation, the resource pack is automatically enabled. You can disable it in settings by setting `enabledResourcepack` to `null`.
+  </Step>
+</Steps>
+
+## Server Resource Packs
+
+When joining a server that provides a resource pack, you'll see a prompt to download and install it.
+
+### Server Resource Pack Settings
+
+Configure how the client handles server resource packs in Settings:
+
+- **Prompt** (default): Ask before downloading
+- **Always**: Automatically download and install
+- **Never**: Reject all server resource packs
+
+```javascript
+options.serverResourcePacks = 'prompt' // or 'always' or 'never'
+```
+
+<Warning>
+Server resource packs require **CORS** to be properly configured on the server hosting the pack. This is not required for vanilla Minecraft clients but is mandatory for web clients.
+</Warning>
+
+### Converting Server Resource Pack to User Pack
+
+You can save a server-provided resource pack permanently:
+
+```javascript
+await copyServerResourcePackToRegular('my-pack-name')
+```
+
+This copies the server resource pack from `/resourcepack/` to `/data/resourcePacks/my-pack-name/` and enables it as a regular user resource pack.
+
+## Technical Details
+
+### Resource Pack Structure
+
+The client supports the standard Minecraft resource pack format:
+
+```
+resource-pack.zip
+├── pack.mcmeta
+├── pack.png (optional)
+└── assets/
+    └── minecraft/
+        ├── textures/
+        │   ├── block/
+        │   ├── item/
+        │   └── models/armor/
+        ├── models/
+        │   ├── block/
+        │   └── item/
+        └── blockstates/
+```
+
+### Installation Path
+
+Resource packs are installed to:
+- **User packs**: `/data/resourcePacks/{name}/`
+- **Server packs**: `/resourcepack/`
+
+### Texture Processing
+
+During installation (from `src/resourcePack.ts:210-309`):
+
+```typescript
+const getResourcepackTiles = async (
+  type: 'blocks' | 'items' | 'armor',
+  existingTextures: string[],
+  progressReporter: ProgressReporter
+) => {
+  const basePath = await getActiveResourcepackBasePath()
+  if (!basePath) return
+  
+  // Scan namespaces
+  const namespaces = await fs.promises.readdir(join(basePath, 'assets'))
+  const textures = {} as Record<string, HTMLImageElement>
+  
+  // Load textures from each namespace
+  for (const namespace of namespaces) {
+    // Process textures and create atlas
+  }
+  
+  return { firstTextureSize, textures }
+}
+```
+
+## Advanced Usage
+
+### Checking Active Resource Pack
+
+```javascript
+const basePath = await getActiveResourcepackBasePath()
+if (basePath) {
+  console.log('Active resource pack:', basePath)
+}
+```
+
+### Reloading Resource Pack
+
+```javascript
+await resourcepackReload()
+```
+
+### Uninstalling Resource Pack
+
+```javascript
+await uninstallResourcePack('default')
+```
+
+## Supported Features
+
+<CardGroup cols={2}>
+  <Card title="Block Textures" icon="cube">
+    Custom textures for all blocks with namespace support
+  </Card>
+  <Card title="Item Textures" icon="box">
+    Custom item textures and models
+  </Card>
+  <Card title="Custom Models" icon="shapes">
+    Block models, item models, and custom model data
+  </Card>
+  <Card title="Blockstates" icon="grid">
+    Custom blockstate definitions
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Resource Pack Not Loading
+
+1. Ensure the ZIP file contains `pack.mcmeta` at the root
+2. Check browser console for errors
+3. Verify textures are in PNG format
+4. Confirm file paths match Minecraft conventions
+
+### Server Resource Pack CORS Error
+
+If you see a CORS error when downloading a server resource pack:
+
+```
+Check internet connection and ensure server on [URL] support CORS
+which is not required for the vanilla client, but is required for the web client.
+```
+
+**Solution**: The server hosting the resource pack must include CORS headers:
+
+```
+Access-Control-Allow-Origin: *
+```
+
+### Performance Issues
+
+Large resource packs may cause slowdowns during installation. The client:
+- Processes all textures on installation
+- Creates atlas textures for blocks and items
+- Stores data in browser file system (RAM)
+
+<Note>
+On iOS, there's a ~300 MB file limit for resource packs stored in memory.
+</Note>
+
+## Related Settings
+
+From `src/defaultOptions.ts:46-48`:
+
+```typescript
+enabledResourcepack: null,          // Name of enabled pack
+useVersionsTextures: 'latest',      // Texture version
+serverResourcePacks: 'prompt',      // How to handle server packs
+```
+
+## See Also
+
+- [Settings](/features/settings) - Configure resource pack options
+- [Customization](/customize/theming) - UI customization options

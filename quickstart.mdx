@@ -1,80 +1,260 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get playing Minecraft in your browser in under 5 minutes"
 ---
 
-## Get started in three steps
+## Start playing now
 
-Get your documentation site running locally and make your first customization.
+No downloads, no installation. Just open your browser and start playing.
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Visit the web app">
+    Open [mcraft.fun](https://mcraft.fun/) in your browser.
+    
+    Works on:
+    - Desktop browsers (Chrome, Firefox, Safari, Edge)
+    - Mobile devices (iOS 14+, Android 13+)
+    - Tablets
+
+    <Tip>
+      For the latest features (but potentially less stable), try [beta.mcraft.fun](https://beta.mcraft.fun/)
+    </Tip>
+  </Step>
+
+  <Step title="Choose your game mode">
+    You have three options:
+
+    ### Singleplayer
+    Create a new world with simple generation or load an existing save.
+    
+    <Note>
+      Singleplayer uses a built-in JavaScript server. Full survival features are limited - see the [Space Squid repo](https://github.com/zardoy/space-squid) for supported features.
+    </Note>
+
+    ### Multiplayer
+    Connect to any Java server running versions 1.8 through 1.21.5.
+    
+    You'll need:
+    - Server IP address
+    - Server version
+    - Optional: Custom proxy URL (built-in proxy provided)
+
+    ### Load a world file
+    Drag and drop a world file or folder:
+    - **Zip files**: Stored entirely in RAM (300 MB limit on iOS)
+    - **Folders**: Can be opened in read-write mode
+    - **Any version**: All Minecraft versions supported
+
+    <Warning>
+      New chunks may generate incorrectly when opening existing worlds.
+    </Warning>
+  </Step>
+
+  <Step title="Start playing">
+    Once you're in the game, use these controls:
+
+    ### Desktop controls
+    - **WASD** - Move forward/left/back/right
+    - **Space** - Jump
+    - **Shift** - Sneak
+    - **Mouse** - Look around
+    - **Left click** - Break blocks
+    - **Right click** - Place blocks/interact
+    - **E** - Open inventory
+    - **Escape** - Pause menu
+    - **F3** - Debug overlay
+
+    ### Mobile controls
+    On mobile, you'll want to enable joystick controls:
+    
+    1. Press **Escape** to open the menu
+    2. Go to **Settings** → **Controls**
+    3. Set **Touch Controls Type** to **Joystick**
+
+    <Tip>
+      Enable **Auto Full Screen** in Controls settings to avoid accidentally closing the tab.
+    </Tip>
+  </Step>
+</Steps>
+
+## Recommended settings
+
+For the best experience, configure these settings (press **Escape** → **Settings**):
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+  <Accordion title="Controls">
+    - **Touch Controls Type** → **Joystick** (mobile only)
+    - **Auto Full Screen** → **On** (prevents ctrl+w tab closing)
+    - **Raw Input** → **On** (more precise controls, already enabled by default)
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+
+  <Accordion title="Interface">
+    - **Enable Minimap** → **Always** (shows useful minimap)
+    - **Chat Select** → **On** (select chat messages, already enabled by default)
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+## Quick examples
+
+### Connect to a server
+
+<Steps>
+  <Step title="Select Multiplayer">
+    Click **Multiplayer** on the main menu.
+  </Step>
+  
+  <Step title="Enter server details">
+    - **Server IP**: e.g. `play.hypixel.net`
+    - **Version**: e.g. `1.21.4`
+    - **Username**: Your desired username
+    - **Proxy**: Leave as default or enter custom proxy URL
+  </Step>
+  
+  <Step title="Connect">
+    Click **Join Server** and wait for the connection.
+    
+    <Note>
+      For online mode servers (like Hypixel), you'll need to authenticate with your Microsoft account.
+    </Note>
+  </Step>
+</Steps>
+
+### Load a world from zip
+
+<Steps>
+  <Step title="Prepare your world">
+    Find a Minecraft world save and compress it to a .zip file.
+    
+    The zip should contain:
+    - `level.dat`
+    - `region/` folder with `.mca` files
+  </Step>
+  
+  <Step title="Drag and drop">
+    Simply drag the .zip file onto the browser window.
+    
+    <Warning>
+      iOS has a ~300 MB file size limit for zip files loaded into memory.
+    </Warning>
+  </Step>
+  
+  <Step title="Wait for loading">
+    The world will be loaded into the integrated server and you'll spawn in.
+  </Step>
+</Steps>
+
+### Load a folder (read-write mode)
+
+<Steps>
+  <Step title="Select folder">
+    Drag a world folder onto the browser window.
+  </Step>
+  
+  <Step title="Grant permissions">
+    Your browser will ask for read-write permissions to the folder.
+  </Step>
+  
+  <Step title="Play and save">
+    Changes you make will be saved back to the folder.
+    
+    <Tip>
+      Use `/export` command to export the world as a zip file at any time.
+    </Tip>
+  </Step>
+</Steps>
+
+## Console access (mobile)
+
+On mobile devices, you can access the browser console for advanced settings:
+
+1. Add `#dev` to the browser URL (page won't reload)
+2. Tap the console button that appears
+3. Access advanced settings with `options.<setting_name> = <value>`
+
+<Note>
+  Type `options` in the console to see all available settings.
+</Note>
+
+## Export your world
+
+Whatever mode you used (zip, folder, singleplayer), you can always export:
+
+```
+/export
+```
+
+Type this command in the game chat to download your world as a zip file.
+
+## Query parameters
+
+You can use URL parameters to customize behavior:
+
+### Auto-connect to a server
+
+```
+https://mcraft.fun/?ip=play.hypixel.net&version=1.21.4&username=Steve
+```
+
+### Load a specific world
+
+```
+https://mcraft.fun/?singleplayer=1&version=1.19.4
+```
+
+### Load world from URL
+
+```
+https://mcraft.fun/?map=https://example.com/world.zip
+```
+
+<Tip>
+  See the [query parameters reference](/reference/query-parameters) for all available options.
+</Tip>
+
+## Troubleshooting
 
 <AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Accordion icon="circle-exclamation" title="Can't connect to server">
+    - Check the server version matches what you specified
+    - Try the built-in proxy (default)
+    - Verify the server IP is correct
+    - Some servers may block VPN/proxy connections
+  </Accordion>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Accordion icon="circle-exclamation" title="Controls not working">
+    - Click on the game window to capture mouse input
+    - On mobile, enable joystick controls in settings
+    - Check browser permissions for pointer lock
+  </Accordion>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
+  <Accordion icon="circle-exclamation" title="Poor performance">
+    - Reduce render distance in settings
+    - Close other browser tabs
+    - Ensure hardware acceleration is enabled in browser settings
+    - Try Chrome for best performance
+  </Accordion>
+
+  <Accordion icon="circle-exclamation" title="World won't load">
+    - Check file size (iOS has 300 MB limit for zips)
+    - Verify world format is correct (Java Edition only)
+    - Try loading in a folder instead of zip
+    - Check browser console for errors (F12)
   </Accordion>
 </AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Singleplayer guide" icon="user" href="/playing/singleplayer">
+    Learn about world generation and management
+  </Card>
+  <Card title="Multiplayer guide" icon="users" href="/playing/multiplayer">
+    Advanced server connection options
+  </Card>
+  <Card title="Controls reference" icon="keyboard" href="/playing/controls">
+    Complete keybindings and control options
+  </Card>
+  <Card title="Mobile & touch" icon="mobile" href="/features/mobile-touch">
+    Optimize for mobile devices
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

@@ -1,0 +1,539 @@
+---
+title: World Loading
+description: Load worlds from ZIP files, folders, drag-and-drop, and export your progress
+---
+
+## Overview
+
+Minecraft Web Client supports loading worlds from multiple sources, including ZIP archives and local folders. All world formats compatible with Minecraft Java Edition work seamlessly.
+
+<Info>
+  Worlds are loaded entirely in your browser using the integrated Flying Squid server and Prismarine Provider Anvil for region file handling.
+</Info>
+
+## Supported Formats
+
+<CardGroup cols={2}>
+  <Card title="ZIP Files" icon="file-zipper">
+    - Entire world compressed in a single file
+    - Stored in browser RAM
+    - ~300 MB limit on iOS
+    - Read-only by default
+  </Card>
+  
+  <Card title="Folders" icon="folder-open">
+    - Native folder access via File System API
+    - Read-only or read-write mode
+    - Better for large worlds
+    - Chrome/Edge only
+  </Card>
+</CardGroup>
+
+## Loading Methods
+
+### Drag and Drop
+
+The easiest way to load a world:
+
+<Steps>
+  <Step title="Prepare Your World">
+    Ensure your world is either:
+    - A ZIP file containing `level.dat` and `region/` folder
+    - A folder with standard Minecraft world structure
+  </Step>
+  
+  <Step title="Drag to Browser">
+    Simply drag the ZIP file or folder into the browser window while on the game page.
+  </Step>
+  
+  <Step title="Select Mode (Folders Only)">
+    For folders, choose:
+    - **Read-only**: Safe, no modifications to original files
+    - **Read-write**: Full editing capability, changes saved to folder
+  </Step>
+  
+  <Step title="World Loads">
+    The world will load automatically using the detected or selected version.
+  </Step>
+</Steps>
+
+<Warning>
+  When opening folders in **read-write mode**, ensure you have a backup! New chunks may be generated incorrectly.
+</Warning>
+
+### URL Parameters
+
+<Tabs>
+  <Tab title="ZIP from URL">
+    Load a world from a ZIP file URL:
+    
+    ```
+    ?map=https://example.com/world.zip
+    ```
+    
+    <Warning>
+      The URL **must be CORS-enabled** for the browser to access it.
+    </Warning>
+    
+    Example CORS headers needed:
+    ```http
+    Access-Control-Allow-Origin: *
+    Access-Control-Allow-Methods: GET
+    ```
+  </Tab>
+  
+  <Tab title="Folder Structure (Advanced)">
+    Load from a file descriptor - the fastest method:
+    
+    ```
+    ?mapDir=https://example.com/world/index.json
+    ```
+    
+    The `index.json` file describes the world structure:
+    
+    ```json
+    {
+      "baseUrl": "https://example.com/world",
+      "index": {
+        "level.dat": null,
+        "region": {
+          "r.-1.-1.mca": null,
+          "r.-1.0.mca": null,
+          "r.0.-1.mca": null,
+          "r.0.0.mca": null
+        }
+      }
+    }
+    ```
+    
+    <Info>
+      This method allows **on-demand chunk loading** - only downloads region files as needed!
+    </Info>
+  </Tab>
+  
+  <Tab title="Base64 Encoded">
+    Embed world structure directly in URL:
+    
+    ```
+    ?mapDir=data:application/json;base64,eyJiYXNlVXJsIjoi...
+    &mapDirBaseUrl=https://example.com/world/
+    ```
+    
+    Useful for:
+    - Sharing custom maps
+    - Embedding in iframes
+    - QR code links
+  </Tab>
+  
+  <Tab title="Saved Worlds">
+    Load from browser storage:
+    
+    ```
+    ?loadSave=my-world-name
+    ```
+    
+    The save name is the **folder name**, not the display title.
+  </Tab>
+</Tabs>
+
+### Via File System API
+
+```typescript
+// World loading implementation from src/loadSave.ts
+export const loadSave = async (root = '/world', connectOptions?: Partial<ConnectOptions>) => {
+  // Read level.dat to detect version
+  const { levelDat, dataRaw } = (await readLevelDat(root))!
+  
+  // Extract version information
+  let version = levelDat.Version?.Name
+  if (!version) {
+    // Fallback for 1.8 and earlier
+    version = '1.8.8'
+  }
+  
+  // Handle player data override
+  const playerUuid = nameToMcOfflineUUID(options.localUsername)
+  const playerDatPath = `${root}/playerdata/${playerUuid}.dat`
+  
+  // Dispatch singleplayer event
+  window.dispatchEvent(new CustomEvent('singleplayer', {
+    detail: { version, worldFolder: root, connectOptions }
+  }))
+}
+```
+
+## File Limits and Memory
+
+### ZIP Files
+
+<Warning>
+  **iOS Limitation**: ~300 MB maximum file size
+  
+  This is due to browser memory constraints on mobile devices.
+</Warning>
+
+<Info>
+  **Desktop browsers**: Can typically handle ZIP files up to several GB, depending on available RAM.
+</Info>
+
+When loading ZIP files:
+- Entire world is decompressed into memory
+- Larger worlds = longer load times
+- Consider using folder access for worlds >500 MB
+
+```typescript
+// Zip files stored in RAM from README.MD:74
+// When opening zip files, they are stored entirely in your RAM.
+// There is a ~300 MB file limit on iOS.
+```
+
+### Folder Access
+
+No file size limits when using folder access:
+- Files read on-demand
+- Only loaded chunks kept in memory
+- Better performance for large worlds
+
+<Note>
+  Folder access requires the **File System Access API**, available in:
+  - Chrome 86+
+  - Edge 86+
+  - Not available in Firefox or Safari
+</Note>
+
+## World Structure
+
+A valid Minecraft world folder must contain:
+
+```
+world/
+├── level.dat          # World metadata (required)
+├── region/            # Terrain data (required)
+│   ├── r.-1.-1.mca
+│   ├── r.-1.0.mca
+│   ├── r.0.-1.mca
+│   └── r.0.0.mca
+├── playerdata/        # Player data files
+│   └── <uuid>.dat
+├── data/              # Scoreboard, structures, etc.
+└── DIM-1/             # Nether dimension (optional)
+    └── region/
+```
+
+### level.dat Detection
+
+```typescript
+// From src/loadSave.ts:37
+export const readLevelDat = async (path) => {
+  let levelDatContent
+  try {
+    levelDatContent = await fs.promises.readFile(`${path}/level.dat`)
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return undefined // level.dat not found
+    }
+    throw err
+  }
+  
+  const { parsed } = await nbt.parse(Buffer.from(levelDatContent))
+  const levelDat = nbt.simplify(parsed).Data
+  return { levelDat, dataRaw: parsed.value.Data!.value }
+}
+```
+
+<Warning>
+  If `level.dat` is missing:
+  - **Read-only mode**: Error - cannot load world
+  - **Read-write mode**: Warning - new world will be created in folder
+</Warning>
+
+## Version Detection
+
+The client automatically detects world version from `level.dat`:
+
+```typescript
+// Version detection from src/loadSave.ts:88
+let version = levelDat.Version?.Name
+if (!version) {
+  // For Minecraft 1.8 and earlier
+  // level.dat doesn't contain version info
+  const newVersion = '1.8.8'
+  version = newVersion
+}
+```
+
+### Version Override
+
+Force a specific version:
+
+```
+?loadSave=my-world&version=1.19.4
+```
+
+or for URL maps:
+
+```
+?map=https://example.com/world.zip&mapVersion=1.20.1
+```
+
+## Exporting Worlds
+
+Save your progress by exporting the world back to your computer.
+
+### Export Command
+
+Use the `/export` or `/download` command in chat:
+
+<Steps>
+  <Step title="Save First">
+    ```
+    /save
+    ```
+    Ensures all changes are persisted.
+  </Step>
+  
+  <Step title="Export">
+    ```
+    /export
+    ```
+    or
+    ```
+    /download
+    ```
+  </Step>
+  
+  <Step title="Wait for Generation">
+    You'll see: "Generating zip, this may take a few minutes"
+    
+    <Warning>
+      Do not close the browser during export!
+    </Warning>
+  </Step>
+  
+  <Step title="Download Starts">
+    Your browser downloads `world-prismarine-exported.zip`
+  </Step>
+</Steps>
+
+```typescript
+// Export implementation from src/builtinCommands.ts:36
+export const exportWorld = async (path: string, type: 'zip' | 'folder', zipName = 'world-prismarine-exported') => {
+  try {
+    if (type === 'zip') {
+      setLoadingScreenStatus('Generating zip, this may take a few minutes')
+      const zip = new JSZip()
+      await addFolderToZip(path, zip, '')
+      
+      // Generate the ZIP archive content
+      const zipContent = await zip.generateAsync({ type: 'blob' })
+      
+      // Create a download link and trigger the download
+      const downloadLink = document.createElement('a')
+      downloadLink.href = URL.createObjectURL(zipContent)
+      downloadLink.download = `${zipName}.zip`
+      downloadLink.click()
+      
+      URL.revokeObjectURL(downloadLink.href)
+    }
+  } finally {
+    setLoadingScreenStatus(undefined)
+  }
+}
+```
+
+### Export to Folder
+
+For folder-based saves with write access, worlds are automatically saved in place. Use the `/export` command to create a separate copy:
+
+```typescript
+// Folder export from src/builtinCommands.ts:55
+if (type === 'folder') {
+  setLoadingScreenStatus('Preparing export folder')
+  let dest = '/'
+  if ((await fs.promises.readdir('/export')).length) {
+    const { levelDat } = (await readLevelDat(path))!
+    dest = await uniqueFileNameFromWorldName(levelDat.LevelName, path)
+  }
+  await copyFilesAsync(path, '/export' + dest)
+}
+```
+
+## Saving Behavior
+
+### Automatic Saves
+
+Worlds are automatically saved:
+- Every few minutes during gameplay
+- On disconnect/world exit
+- When using `/save` command
+
+<Info>
+  For ZIP and URL-loaded worlds, use `/export` to download changes. They're saved to browser memory, not the original file.
+</Info>
+
+### Disable Auto-Save
+
+Prevent automatic saving:
+
+```
+?noSave=true
+```
+
+With this option:
+- Only manual `/save` commands work
+- No save on disconnect
+- No periodic saves
+- Useful for testing without cluttering browser storage
+
+```typescript
+// From README.MD:194
+// ?noSave=true - Disable auto save on unload / disconnect / export
+// Only manual save with `/save` command will work
+```
+
+## Read-Only vs Read-Write
+
+<Tabs>
+  <Tab title="Read-Only Mode">
+    **Characteristics:**
+    - Original files never modified
+    - Changes stored in browser memory
+    - Safe for preserving original worlds
+    - Use `/export` to save changes
+    
+    **When to use:**
+    - Exploring downloaded worlds
+    - Testing without risk
+    - iOS devices (no folder write access)
+  </Tab>
+  
+  <Tab title="Read-Write Mode">
+    **Characteristics:**
+    - Direct writes to folder
+    - Changes immediately saved to disk
+    - Can corrupt world if errors occur
+    - Requires folder access permission
+    
+    **When to use:**
+    - Active world development
+    - Permanent changes needed
+    - Desktop browsers only
+    
+    <Warning>
+      Always backup before using read-write mode!
+    </Warning>
+  </Tab>
+</Tabs>
+
+```typescript
+// FS state tracking from src/loadSave.ts:18
+export const fsState = proxy({
+  isReadonly: false,
+  syncFs: false,
+  inMemorySave: false,
+  saveLoaded: false,
+  openReadOperations: 0,
+  openWriteOperations: 0,
+  remoteBackend: false,
+  inMemorySavePath: ''
+})
+```
+
+## Compatibility Notes
+
+<AccordionGroup>
+  <Accordion title="Community Saves">
+    Some community worlds use non-standard folder structures. The client automatically handles:
+    
+    ```typescript
+    // From src/loadSave.ts:147
+    const rootRemapFiles = ['Warp files']
+    for (const rootRemapFile of rootRemapFiles) {
+      if (await existsViaStats(path.join(root, '..', rootRemapFile))) {
+        forceRedirectPaths[path.join(root, rootRemapFile)] = path.join(root, '..', rootRemapFile)
+      }
+    }
+    ```
+    
+    This ensures worlds with custom folder mappings load correctly.
+  </Accordion>
+  
+  <Accordion title="Version 1.8 and Earlier">
+    Worlds from Minecraft 1.8 and before don't store version information in `level.dat`.
+    
+    The client defaults to **1.8.8** but you should specify the correct version:
+    
+    ```
+    ?loadSave=old-world&version=1.8.8
+    ```
+  </Accordion>
+  
+  <Accordion title="Modded Worlds">
+    Worlds from modded Minecraft may contain:
+    - Custom blocks (rendered as default textures)
+    - Mod-specific data (ignored)
+    - Non-standard chunk data (may cause errors)
+    
+    <Warning>
+      Vanilla-only world saves are recommended for best compatibility.
+    </Warning>
+  </Accordion>
+  
+  <Accordion title="Large Worlds">
+    For worlds larger than 1 GB:
+    - Use folder access instead of ZIP
+    - Increase render distance gradually
+    - Monitor browser memory usage
+    - Export frequently to prevent data loss
+  </Accordion>
+</AccordionGroup>
+
+## Debugging
+
+Access world data in the browser console:
+
+```javascript
+// View current world state
+fsState
+
+// Check if world is read-only
+fsState.isReadonly
+
+// View save path
+fsState.inMemorySavePath
+
+// Access level.dat data
+readLevelDat('/world').then(console.log)
+```
+
+<Info>
+  See [Global Variables](/reference/global-variables) for more debugging tools.
+</Info>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Backup Regularly" icon="floppy-disk">
+    Use `/export` frequently, especially before:
+    - Major building projects
+    - Exploring new chunks
+    - Closing the browser
+  </Card>
+  
+  <Card title="Version Consistency" icon="code-branch">
+    Load worlds with their native version when possible:
+    ```
+    ?loadSave=my-119-world&version=1.19.4
+    ```
+  </Card>
+  
+  <Card title="Test Read-Only First" icon="shield">
+    Always test with read-only mode before using read-write.
+  </Card>
+  
+  <Card title="Monitor Memory" icon="memory">
+    Watch browser memory usage for large worlds:
+    - Chrome: Task Manager (Shift+Esc)
+    - Firefox: about:memory
+  </Card>
+</CardGroup>

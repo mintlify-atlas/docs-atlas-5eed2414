@@ -1,0 +1,369 @@
+---
+title: Controller & Gamepad Support
+description: Complete guide to using Xbox, PlayStation, and other game controllers with Minecraft Web Client
+---
+
+## Overview
+
+Minecraft Web Client includes **first-class controller support** with automatic gamepad detection, configurable button mappings, and a dedicated UI cursor system for menus. Connect any standard gamepad (Xbox, PlayStation, Switch Pro, etc.) and play seamlessly.
+
+## Supported Controllers
+
+<CardGroup cols={3}>
+  <Card title="Xbox Controllers" icon="xbox">
+    Xbox One, Xbox Series X/S, Xbox 360 controllers fully supported
+  </Card>
+  <Card title="PlayStation" icon="playstation">
+    PS4 and PS5 DualShock/DualSense controllers
+  </Card>
+  <Card title="Generic Gamepads" icon="gamepad">
+    Any controller compatible with the Gamepad API
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+<Steps>
+  <Step title="Connect Your Controller">
+    - **Wired**: Plug in via USB
+    - **Wireless**: Connect via Bluetooth
+    
+    The game will automatically detect the controller when connected.
+  </Step>
+
+  <Step title="Test Detection">
+    Move the analog sticks or press any button. If detected, you'll see:
+    - UI cursor appears on screen
+    - Movement responds to left stick
+  </Step>
+
+  <Step title="Configure Bindings (Optional)">
+    Open Settings → Controls → Keybindings to customize button mappings
+  </Step>
+
+  <Step title="Start Playing">
+    Use the controller to navigate menus and play the game!
+  </Step>
+</Steps>
+
+## Default Button Mappings
+
+From `src/controls.ts:44-90`:
+
+### Movement Controls
+
+```typescript
+movement: {
+  forward: ['KeyW'],
+  back: ['KeyS'],
+  left: ['KeyA'],
+  right: ['KeyD'],
+  jump: ['Space', 'A'],                    // A button (Xbox)
+  sneak: ['ShiftLeft', 'Down'],            // D-pad Down
+  toggleSneakOrDown: [null, 'Right Stick'], // R3 click
+  sprint: ['ControlLeft', 'Left Stick'],    // L3 click
+}
+```
+
+### General Controls
+
+```typescript
+general: {
+  inventory: ['KeyE', 'X'],                // X button
+  drop: ['KeyQ', 'B'],                     // B button
+  nextHotbarSlot: [null, 'Right Bumper'],  // RB/R1
+  prevHotbarSlot: [null, 'Left Bumper'],   // LB/L1
+  attackDestroy: [null, 'Right Trigger'],  // RT/R2
+  interactPlace: [null, 'Left Trigger'],   // LT/L2
+  chat: [['KeyT', 'Enter'], 'Right'],      // D-pad Right
+  playersList: ['Tab', 'Left'],            // D-pad Left
+  togglePerspective: ['F5', 'Up'],         // D-pad Up
+}
+```
+
+### UI Navigation
+
+```typescript
+ui: {
+  back: [null, 'B'],             // B button
+  leftClick: [null, 'A'],        // A button
+  rightClick: [null, 'X'],       // X button
+  speedupCursor: [null, 'Left Stick'], // L3 click (hold)
+  pauseMenu: [null, 'Start']     // Start/Options button
+}
+```
+
+## Gamepad UI Cursor
+
+When using a controller, a **virtual cursor** appears for navigating menus and UI elements.
+
+### Cursor Movement
+
+From `src/app/gamepadCursor.ts:7-18`:
+
+```typescript
+contro.on('movementUpdate', ({ vector, soleVector, gamepadIndex }) => {
+  if (gamepadIndex !== undefined && gamepadUiCursorState.display) {
+    const deadzone = 0.1
+    if (Math.abs(soleVector.x) < deadzone && 
+        Math.abs(soleVector.z) < deadzone) {
+      return
+    }
+    moveGamepadCursorByPx(soleVector.x, true)
+    moveGamepadCursorByPx(soleVector.z, false)
+    emitMousemove()
+    trackHoveredElement()
+  }
+})
+```
+
+### Scrolling with Right Stick
+
+From `src/app/gamepadCursor.ts:66-85`:
+
+```typescript
+contro.on('stickMovement', ({ stick, vector }) => {
+  if (stick !== 'right') return
+  if (!gamepadUiCursorState.display) return
+
+  let { x, z } = vector
+  if (Math.abs(x) < 0.18) x = 0
+  if (Math.abs(z) < 0.18) z = 0
+
+  // Horizontal movement for inputs
+  if (x !== 0) {
+    emitGamepadInputChange(x, true)
+  }
+
+  // Vertical movement for scrolling
+  if (z !== 0) {
+    emulateGamepadScroll(z)
+  }
+})
+```
+
+## Button Reference
+
+### Combat & Building
+
+| Action | Xbox | PlayStation | Function |
+|--------|------|-------------|----------|
+| **Attack/Break** | RT | R2 | Break blocks, attack entities |
+| **Place/Use** | LT | L2 | Place blocks, use items |
+| **Drop Item** | B | Circle | Drop held item |
+| **Swap Hands** | (unmapped) | (unmapped) | Swap main/offhand |
+
+### Movement & Camera
+
+| Action | Xbox | PlayStation | Function |
+|--------|------|-------------|----------|
+| **Move** | Left Stick | Left Stick | Walk/strafe |
+| **Look** | Right Stick | Right Stick | Camera rotation |
+| **Jump** | A | X | Jump / Fly up |
+| **Sneak** | D-pad Down | D-pad Down | Sneak / Fly down |
+| **Sprint** | L3 Click | L3 Click | Toggle sprint |
+| **Toggle Sneak** | R3 Click | R3 Click | Toggle sneak |
+
+### UI & Menus
+
+| Action | Xbox | PlayStation | Function |
+|--------|------|-------------|----------|
+| **Select/Confirm** | A | X | Click buttons, select items |
+| **Back/Cancel** | B | Circle | Close menus, go back |
+| **Right Click** | X | Square | Context actions |
+| **Pause Menu** | Start | Options | Open pause menu |
+| **Speed Cursor** | L3 Click (hold) | L3 Click (hold) | Faster cursor movement |
+
+### Hotbar & Inventory
+
+| Action | Xbox | PlayStation | Function |
+|--------|------|-------------|----------|
+| **Next Slot** | RB | R1 | Cycle hotbar right |
+| **Previous Slot** | LB | L1 | Cycle hotbar left |
+| **Inventory** | X | Square | Open inventory |
+
+## Advanced Features
+
+### Gamepad Polling
+
+The client polls gamepad input at high frequency:
+
+```typescript
+{
+  gamepadPollingInterval: 10 // Poll every 10ms
+}
+```
+
+### Gamepad Detection
+
+Automatic detection from movement updates:
+
+```typescript
+contro.on('movementUpdate', ({ gamepadIndex }) => {
+  miscUiState.usingGamepadInput = gamepadIndex !== undefined
+})
+```
+
+### UI Cursor State
+
+Access cursor state programmatically:
+
+```javascript
+// Check cursor display
+console.log(gamepadUiCursorState.display)
+
+// Get cursor position (0-100%)
+console.log(gamepadUiCursorState.x, gamepadUiCursorState.y)
+
+// Cursor speed multiplier
+console.log(gamepadUiCursorState.multiply) // 1 or 2 (when speedup pressed)
+```
+
+### Emulating Mouse Clicks
+
+From `src/app/gamepadCursor.ts:184-224`:
+
+```typescript
+export const emulateMouseClick = (isRightClick: boolean) => {
+  const { x, y } = gamepadUiCursorState
+  const xAbs = x / 100 * window.innerWidth
+  const yAbs = y / 100 * window.innerHeight
+  const el = document.elementFromPoint(xAbs, yAbs)
+  
+  if (el) {
+    el.dispatchEvent(new MouseEvent('mousedown', {
+      button: isRightClick ? 2 : 0,
+      bubbles: true,
+      clientX: xAbs,
+      clientY: yAbs
+    }))
+    // ... additional events
+  }
+}
+```
+
+## Customizing Controls
+
+<Steps>
+  <Step title="Open Keybindings">
+    Navigate to Settings → Controls → Keybindings
+  </Step>
+
+  <Step title="Select Action">
+    Click on any action you want to rebind
+  </Step>
+
+  <Step title="Press New Button">
+    Press the gamepad button you want to assign
+  </Step>
+
+  <Step title="Save Changes">
+    Changes are automatically saved to local storage
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Controller Not Detected
+
+1. **Check Connection**
+   - Ensure controller is properly connected (USB or Bluetooth)
+   - Try pressing buttons to wake it up
+   - Check browser console for Gamepad API errors
+
+2. **Browser Compatibility**
+   - Use Chrome, Firefox, or Edge (best support)
+   - Safari has limited gamepad support
+   - Ensure browser permissions are granted
+
+3. **Test Detection**
+   ```javascript
+   // In browser console
+   navigator.getGamepads()
+   ```
+
+### Buttons Not Working
+
+- Verify button mappings in Settings → Keybindings
+- Check that the controller is recognized by the Gamepad API
+- Try disconnecting and reconnecting
+- Test with different browser
+
+### Cursor Too Fast/Slow
+
+- Hold L3/Left Stick button to speed up cursor (2x multiplier)
+- Adjust sensitivity in game settings
+- Try different controllers with better analog precision
+
+### Touch Controls Override Gamepad
+
+The client automatically hides touch controls when a gamepad is detected:
+
+```typescript
+if (!usingTouch || usingGamepadInput || touchMovementType !== 'classic') {
+  return null // Hide touch controls
+}
+```
+
+If touch controls persist, check `miscUiState.usingGamepadInput`.
+
+## Platform Notes
+
+### Windows
+- Xbox controllers: Native support via XInput
+- PlayStation controllers: Use DS4Windows or Steam Input
+- Generic controllers: DirectInput support
+
+### macOS
+- PS4/PS5 controllers: Native Bluetooth support
+- Xbox controllers: Requires wireless adapter or wired connection
+- Switch Pro Controller: Works via Bluetooth
+
+### Linux
+- Most controllers work via evdev
+- May require xboxdrv for Xbox controllers
+- Steam Input provides universal support
+
+### Mobile
+- Android: Bluetooth controller support varies by device
+- iOS: MFi-certified controllers recommended
+- Some controllers require browser flags
+
+## Advanced Console Commands
+
+Access gamepad internals via browser console:
+
+```javascript
+// Access ControMax instance
+window.controMax
+
+// View pressed buttons
+contro.pressedKeys
+
+// Manually emit events
+contro.emit('trigger', { command: 'movement.jump' })
+
+// Test mouse click emulation
+emulateMouseClick(false) // Left click
+emulateMouseClick(true)  // Right click
+
+// Check gamepad state
+miscUiState.usingGamepadInput
+```
+
+## Icon Support
+
+The client includes PlayStation button icons:
+
+- `playstation_triangle_console_controller_gamepad_icon.svg`
+- `playstation_square_console_controller_gamepad_icon.svg`
+- `cross_playstation_console_controller_gamepad_icon.svg`
+- `circle_playstation_console_controller_gamepad_icon.svg`
+
+And a generic gamepad icon from PixelartIcons.
+
+## See Also
+
+- [Mobile & Touch Controls](/features/mobile-touch) - Touch input for mobile devices
+- [Keybindings](/customize/keybindings) - Customize all controls
+- [Settings](/features/settings) - Game configuration options

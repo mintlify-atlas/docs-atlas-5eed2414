@@ -1,0 +1,377 @@
+---
+title: Minimap
+description: Learn how to use the minimap feature, view the full map, and navigate your Minecraft world
+---
+
+## Overview
+
+The Minecraft Web Client includes a **built-in minimap** that displays your current position, nearby terrain, and allows quick navigation. The minimap can be toggled between compact circular view and fullscreen map mode.
+
+## Features
+
+- **Circular Minimap**: Compact view in the top-right corner
+- **Full Map View**: Expandable fullscreen map
+- **Real-time Updates**: Shows terrain as you explore
+- **Player Position**: Displays current coordinates
+- **Rotation**: Map rotates with player view
+- **Warp Points**: Mark and display important locations
+
+## Enabling the Minimap
+
+The minimap can be configured to show in different scenarios:
+
+```javascript
+options.showMinimap = 'always'      // Always show minimap
+options.showMinimap = 'singleplayer' // Only in singleplayer
+options.showMinimap = 'never'        // Never show minimap
+```
+
+<Note>
+From the README: "Enable Minimap: Always" is a **recommended setting** for the best experience.
+</Note>
+
+## Display Modes
+
+<Tabs>
+  <Tab title="Minimap Only">
+    **Compact circular view**
+
+    - Located in top-right corner
+    - 80x80 pixel circular display
+    - Shows coordinates below
+    - Click to toggle fullscreen
+
+    From `src/react/Minimap.tsx:86-118`:
+    ```tsx
+    <div className='minimap'
+      style={{
+        position: 'absolute',
+        right: '0px',
+        top: '0px',
+        padding: '5px 5px 0px 0px',
+        textAlign: 'center',
+        zIndex: 7,
+      }}
+      onClick={() => toggleFullMap?.()}
+    >
+      <canvas
+        style={{
+          transition: '0.5s',
+          borderRadius: '1000px'
+        }}
+        width={80}
+        height={80}
+      />
+      <div style={{ fontSize: '0.5em' }}>
+        {Math.round(position.x)} {Math.round(position.y)} {Math.round(position.z)}
+      </div>
+    </div>
+    ```
+  </Tab>
+
+  <Tab title="Fullmap View">
+    **Expandable fullscreen map**
+
+    - Triggered by clicking minimap
+    - Shows larger area
+    - Better for navigation
+    - Press `J` or click to close
+
+    Rendered by the `Fullmap` component when `fullMap` is true.
+  </Tab>
+</Tabs>
+
+## Using the Minimap
+
+<Steps>
+  <Step title="Enable Minimap">
+    Set `showMinimap` option to `'always'` or `'singleplayer'`:
+    
+    Settings → Interface → Enable Minimap → **Always**
+  </Step>
+
+  <Step title="View Current Position">
+    Look at the top-right corner. You'll see:
+    - Circular map of nearby terrain
+    - Coordinates below the map (X Y Z)
+  </Step>
+
+  <Step title="Toggle Full Map">
+    **Option 1**: Click the minimap
+    
+    **Option 2**: Press the `J` key (default toggle map binding)
+    
+    From `src/controls.ts:85`:
+    ```typescript
+    ui: {
+      toggleMap: ['KeyJ'],
+    }
+    ```
+  </Step>
+
+  <Step title="Navigate with Full Map">
+    Use the fullscreen map to:
+    - See larger area of explored terrain
+    - Plan your route
+    - Locate points of interest
+  </Step>
+</Steps>
+
+## Map Updates
+
+The minimap updates in real-time with throttling for performance.
+
+From `src/react/Minimap.tsx:28-53`:
+
+```typescript
+const lastUpdate = useRef(0)
+const THROTTLE_MS = 50 // 20fps
+
+const updateMap = () => {
+  const now = Date.now()
+  if (now - lastUpdate.current < THROTTLE_MS) return
+  lastUpdate.current = now
+
+  setPosition({ 
+    x: adapter.playerPosition.x, 
+    y: adapter.playerPosition.y, 
+    z: adapter.playerPosition.z 
+  })
+  
+  if (adapter.mapDrawer) {
+    if (!full.current) {
+      rotateMap()
+      adapter.mapDrawer.draw(adapter.playerPosition)
+      adapter.mapDrawer.drawPlayerPos()
+      adapter.mapDrawer.drawWarps()
+    }
+    
+    // Cleanup old chunks every 300 ticks
+    if (canvasTick.current % 300 === 0 && !fullMap) {
+      adapter.mapDrawer.clearChunksStore()
+      canvasTick.current = 0
+    }
+  }
+  canvasTick.current += 1
+}
+```
+
+### Update Frequency
+
+- **Throttled to 20 FPS** (updates every 50ms)
+- **Chunk cleanup** every 300 ticks to free memory
+- **Idle optimization** using `requestIdleCallback` when available
+
+## Map Rotation
+
+The minimap rotates to match your viewing direction:
+
+```typescript
+const rotateMap = () => {
+  if (!adapter.mapDrawer) return
+  adapter.mapDrawer.canvas.style.transform = `rotate(${adapter.yaw}rad)`
+  adapter.mapDrawer.yaw = adapter.yaw
+}
+```
+
+This keeps the map oriented with your character's facing direction.
+
+## Minimap Settings
+
+### Show Minimap
+
+From `src/defaultOptions.ts:118`:
+
+```typescript
+showMinimap: 'never' // 'always' | 'singleplayer' | 'never'
+```
+
+### Minimap Optimizations
+
+```typescript
+minimapOptimizations: true // Enable performance optimizations
+```
+
+When enabled:
+- Chunks are cached efficiently
+- Old chunks are cleared from memory
+- Canvas updates use requestIdleCallback
+
+## Display Conditions
+
+From `src/react/Minimap.tsx:80-85`:
+
+```typescript
+return fullMap && displayMode !== 'minimapOnly' && 
+       (showFullmap === 'singleplayer' && singleplayer || 
+        showFullmap === 'always')
+  ? <Fullmap toggleFullMap={toggleFullMap} adapter={adapter} />
+  : displayMode !== 'fullmapOnly' && 
+    (showMinimap === 'singleplayer' && singleplayer || 
+     showMinimap === 'always')
+```
+
+The minimap displays when:
+- `showMinimap` is `'always'`, OR
+- `showMinimap` is `'singleplayer'` AND you're in singleplayer mode
+
+## Warp Points
+
+The minimap can display warp points (marked locations):
+
+```typescript
+adapter.mapDrawer.drawWarps()
+```
+
+These appear as markers on the map to help you navigate to important locations.
+
+## Technical Details
+
+### Canvas Rendering
+
+The minimap uses HTML5 Canvas:
+
+```tsx
+<canvas
+  style={{
+    transition: '0.5s',
+    transitionTimingFunction: 'ease-out',
+    borderRadius: '1000px' // Circular shape
+  }}
+  width={80}
+  height={80}
+  ref={canvasRef}
+/>
+```
+
+### Map Drawer Adapter
+
+The `DrawerAdapter` interface provides:
+
+- `playerPosition`: Current player coordinates
+- `yaw`: Player rotation angle
+- `mapDrawer`: Canvas rendering instance
+  - `draw(position)`: Render terrain
+  - `drawPlayerPos()`: Draw player marker
+  - `drawWarps()`: Draw warp points
+  - `clearChunksStore()`: Free memory
+
+### Events
+
+The adapter emits events for map updates:
+
+```typescript
+adapter.on('updateMap', updateMap)
+adapter.on('updateWaprs', updateWarps) // Note: typo in source
+```
+
+## Keybindings
+
+Toggle the map with the default keybinding:
+
+**Keyboard**: `J`
+
+**Gamepad**: Not mapped by default (can be configured)
+
+Change in Settings → Controls → Keybindings → **Toggle Map**
+
+## Performance Considerations
+
+### Memory Management
+
+The minimap automatically cleans up old chunks:
+
+```typescript
+if (canvasTick.current % 300 === 0 && !fullMap) {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      adapter.mapDrawer?.clearChunksStore()
+    })
+  } else {
+    adapter.mapDrawer.clearChunksStore()
+  }
+}
+```
+
+### Optimizations
+
+1. **Throttled Updates**: 20 FPS maximum
+2. **Idle Callbacks**: Cleanup runs during idle time
+3. **Conditional Rendering**: Only renders when visible
+4. **Chunk Caching**: Reuses previously rendered chunks
+
+<Note>
+Enable `minimapOptimizations: true` for best performance, especially on lower-end devices.
+</Note>
+
+## Troubleshooting
+
+### Minimap Not Showing
+
+1. Check `showMinimap` setting:
+   ```javascript
+   console.log(options.showMinimap)
+   ```
+
+2. Verify you're in the correct mode:
+   - If set to `'singleplayer'`, you must be in singleplayer
+   - If set to `'never'`, change to `'always'`
+
+3. Check if fullmap is blocking minimap:
+   ```javascript
+   console.log(miscUiState.displayFullmap)
+   ```
+
+### Map Not Updating
+
+- Ensure you're moving (map updates on position change)
+- Check browser console for errors
+- Verify `adapter.mapDrawer` is initialized
+
+### Performance Issues
+
+- Enable `minimapOptimizations`
+- Reduce render distance
+- Close fullmap when not needed
+- Check browser performance settings
+
+## Advanced Usage
+
+### Accessing Minimap State
+
+```javascript
+// Player position
+console.log(adapter.playerPosition)
+
+// Map drawer instance
+console.log(adapter.mapDrawer)
+
+// Force update
+adapter.emit('updateMap')
+
+// Toggle fullmap programmatically
+miscUiState.displayFullmap = !miscUiState.displayFullmap
+```
+
+### Custom Display Modes
+
+The minimap supports display mode hints:
+
+- `'minimapOnly'`: Only show compact minimap
+- `'fullmapOnly'`: Only show fullscreen map
+- `undefined`: Allow both (default)
+
+## Related Settings
+
+From `src/defaultOptions.ts:118-119`:
+
+```typescript
+showMinimap: 'never' as 'always' | 'singleplayer' | 'never',
+minimapOptimizations: true,
+```
+
+## See Also
+
+- [Settings](/features/settings) - Configure minimap options
+- [Debug Overlay](/guides/debugging) - F3 debug information
+- [Keybindings](/customize/keybindings) - Customize toggle map key

@@ -1,0 +1,483 @@
+---
+title: Global Variables
+description: Console variables and debugging functions available in the browser console
+---
+
+The Minecraft Web Client exposes several global variables to the browser console for debugging and advanced interactions. Access these by opening the console (F12) or typing `#dev` in the address bar on mobile.
+
+<Note>
+  On mobile, type `#dev` in the browser address bar to show a button that opens the console.
+</Note>
+
+## Core Game Objects
+
+### bot
+
+<ParamField path="window.bot" type="object">
+  The Mineflayer bot instance. This is the main interface to the game client.
+  
+  **Available:** After connecting to a server or starting singleplayer
+  
+  **Usage:**
+  ```javascript
+  bot.entity.position  // Current player position
+  bot.game.gameMode    // Current game mode
+  bot.health           // Player health
+  bot.food             // Player food level
+  bot.inventory        // Player inventory
+  bot.chat('Hello!')   // Send chat message
+  ```
+  
+  See [Mineflayer documentation](https://github.com/PrismarineJS/mineflayer) for complete API reference.
+</ParamField>
+
+### world
+
+<ParamField path="window.world" type="WorldRendererThree">
+  The Three.js world renderer instance. Handles all 3D rendering.
+  
+  **Available:** After the world renderer is initialized
+  
+  **Useful properties:**
+  ```javascript
+  world.sectionObjects      // All active chunk sections (meshes)
+  world.getCameraPosition() // Current camera position
+  world.getLoadedChunksRelative() // Chunks relative to player
+  ```
+</ParamField>
+
+### localServer / server
+
+<ParamField path="window.localServer" type="object">
+  The Flying Squid server instance. Only available in singleplayer or when hosting.
+  
+  **Available:** Only in singleplayer mode
+  
+  **Useful properties:**
+  ```javascript
+  localServer.overworld.storageProvider.regions // All loaded region files
+  localServer.levelData.LevelName               // World name
+  
+  // Change world name and save
+  localServer.levelData.LevelName = 'New Name'
+  localServer.writeLevelDat()
+  ```
+  
+  **Aliases:** `window.server`
+</ParamField>
+
+## State Objects
+
+### options
+
+<ParamField path="window.options" type="object">
+  The game settings/options object. Contains all configurable settings.
+  
+  **Alias:** `window.settings`
+  
+  **Usage:**
+  ```javascript
+  // View all options
+  options
+  
+  // Change settings
+  options.renderDistance = 8
+  options.fov = 90
+  options.debugLogNotFrequentPackets = true
+  
+  // View changed options
+  debugChangedOptions
+  ```
+  
+  <Warning>
+    Changes to options are automatically saved to localStorage. Some settings require reconnecting or reloading chunks to take effect.
+  </Warning>
+</ParamField>
+
+### miscUiState
+
+<ParamField path="window.miscUiState" type="object">
+  UI and game state information.
+  
+  **Properties:**
+  ```javascript
+  miscUiState.gameLoaded       // Whether game HUD is shown
+  miscUiState.singleplayer     // Whether in singleplayer mode
+  miscUiState.flyingSquid      // Whether Flying Squid is running
+  miscUiState.wanOpened        // Whether world is open to WAN
+  miscUiState.showDebugHud     // Whether F3 debug overlay is shown
+  miscUiState.showUI           // Whether UI is visible (F1)
+  miscUiState.fullscreen       // Whether in fullscreen mode
+  miscUiState.loadedDataVersion // Current MC version loaded
+  ```
+</ParamField>
+
+### gameAdditionalState
+
+<ParamField path="window.gameAdditionalState" type="object">
+  Additional game state not available from the bot.
+  
+  **Properties:**
+  ```javascript
+  gameAdditionalState.isFlying           // Flying state
+  gameAdditionalState.isSprinting        // Sprinting state
+  gameAdditionalState.isSneaking         // Sneaking state
+  gameAdditionalState.isZooming          // Zoom active (C key)
+  gameAdditionalState.warps              // World waypoints
+  gameAdditionalState.noConnection       // Connection lost
+  gameAdditionalState.poorConnection     // Poor connection
+  gameAdditionalState.usingServerResourcePack // Server resourcepack active
+  ```
+</ParamField>
+
+### activeModalStack
+
+<ParamField path="window.activeModalStack" type="array">
+  Stack of currently open modals/screens.
+  
+  **Usage:**
+  ```javascript
+  // Get current modal
+  activeModalStack.at(-1).reactType
+  
+  // Show a modal
+  showModal({ reactType: 'pause-screen' })
+  showModal({ reactType: 'options-video' })
+  ```
+</ParamField>
+
+## Utility Functions
+
+### Position Helpers
+
+<ParamField path="window.cursorBlockRel" type="function">
+  Get the block you're looking at, with optional offset.
+  
+  **Usage:**
+  ```javascript
+  cursorBlockRel()      // Block at cursor
+  cursorBlockRel(0,1,0) // Block above cursor
+  cursorBlockRel(1,0,0) // Block to the right
+  ```
+</ParamField>
+
+<ParamField path="window.entityCursor" type="function">
+  Get the entity you're looking at.
+  
+  **Usage:**
+  ```javascript
+  entityCursor()        // Returns entity or undefined
+  ```
+</ParamField>
+
+### Chunk Helpers
+
+<ParamField path="window.debugSceneChunks" type="getter">
+  Get all loaded chunks relative to your current position (0,0 is current chunk).
+  
+  **Usage:**
+  ```javascript
+  debugSceneChunks  // Object with chunk sections
+  ```
+</ParamField>
+
+<ParamField path="window.chunkKey" type="function">
+  Get the chunk key at your position with optional offset.
+  
+  **Usage:**
+  ```javascript
+  chunkKey()      // "0,0" (current chunk)
+  chunkKey(1,0)   // Chunk to the east
+  chunkKey(-1,1)  // Chunk to northwest
+  ```
+</ParamField>
+
+<ParamField path="window.sectionKey" type="function">
+  Get the section key (chunk + Y level) with optional offset.
+  
+  **Usage:**
+  ```javascript
+  sectionKey()        // "0,64,0" (current section)
+  sectionKey(0,1,0)   // Section above
+  ```
+</ParamField>
+
+### Object Helpers
+
+<ParamField path="window.keys" type="function">
+  Shorthand for `Object.keys()`.
+  
+  **Usage:**
+  ```javascript
+  keys(world.sectionObjects)
+  ```
+</ParamField>
+
+<ParamField path="window.values" type="function">
+  Shorthand for `Object.values()`.
+  
+  **Usage:**
+  ```javascript
+  values(world.sectionObjects)
+  ```
+</ParamField>
+
+<ParamField path="window.len" type="function">
+  Get the number of keys in an object.
+  
+  **Usage:**
+  ```javascript
+  len(world.sectionObjects)  // Number of loaded sections
+  ```
+</ParamField>
+
+## Debug Functions
+
+### Packet Inspection
+
+<ParamField path="window.inspectPacket" type="function">
+  Log packets by name. Supports wildcards.
+  
+  **Signature:** `inspectPacket(packetName, isFromClient = false, fullOrListener = false)`
+  
+  **Usage:**
+  ```javascript
+  // Log all chat packets
+  inspectPacket('chat')
+  
+  // Log all packets starting with 'player'
+  inspectPacket('player*')
+  
+  // Log full packet data
+  inspectPacket('spawn_entity', false, true)
+  
+  // Custom listener
+  inspectPacket('position', (data) => {
+    console.log('Position:', data.x, data.y, data.z)
+  })
+  ```
+</ParamField>
+
+<ParamField path="window.debugServerPacketNames" type="object">
+  All available server→client packet names for the current version.
+  
+  **Usage:**
+  ```javascript
+  debugServerPacketNames
+  // { chat: 'chat', spawn_entity: 'spawn_entity', ... }
+  ```
+</ParamField>
+
+<ParamField path="window.debugClientPacketNames" type="object">
+  All available client→server packet names for the current version.
+  
+  **Usage:**
+  ```javascript
+  debugClientPacketNames
+  ```
+</ParamField>
+
+### Performance Monitoring
+
+<ParamField path="window.markStart" type="function">
+  Start a performance measurement.
+  
+  **Usage:**
+  ```javascript
+  markStart('myOperation')
+  // ... do something ...
+  markEnd('myOperation')  // Logs duration
+  ```
+</ParamField>
+
+<ParamField path="window.markEnd" type="function">
+  End a performance measurement and log the duration.
+</ParamField>
+
+<ParamField path="window.statsPerSec" type="object">
+  Statistics per second (e.g., packets, events).
+  
+  **Usage:**
+  ```javascript
+  addStatPerSec('myEvent')
+  statsPerSec  // { myEvent: 60 } (events per second)
+  ```
+</ParamField>
+
+## File System
+
+<ParamField path="window.fs" type="object">
+  BrowserFS filesystem instance. Access virtual file system.
+  
+  **Usage:**
+  ```javascript
+  // Read a file
+  fs.promises.readFile('/world/level.dat')
+  
+  // List directory
+  fs.promises.readdir('/world/region')
+  ```
+</ParamField>
+
+<ParamField path="window.nbt" type="object">
+  NBT parser for reading Minecraft data files.
+  
+  **Usage:**
+  ```javascript
+  // Parse and simplify NBT data
+  const data = await fs.promises.readFile('/world/level.dat')
+  const parsed = await nbt.parse(data)
+  const simplified = nbt.simplify(parsed)
+  console.log(simplified)
+  ```
+</ParamField>
+
+<ParamField path="window.exportWorld" type="function">
+  Export the current world programmatically.
+  
+  **Usage:**
+  ```javascript
+  await exportWorld()  // Downloads world as ZIP
+  ```
+</ParamField>
+
+## Advanced
+
+### Control System
+
+<ParamField path="window.controMax" type="object">
+  The Contro-Max input controller instance.
+  
+  **Usage:**
+  ```javascript
+  controMax.pressedKeys        // Currently pressed keys
+  controMax.userConfig         // Keybinding configuration
+  controMax.emit('trigger', { command: 'general.jump' })
+  ```
+</ParamField>
+
+### Camera Controls
+
+<ParamField path="window.cameraRotationControls" type="object">
+  Camera rotation control system.
+  
+  **Usage:**
+  ```javascript
+  cameraRotationControls.start('left')   // Start rotating left
+  cameraRotationControls.stop('left')    // Stop rotating
+  cameraRotationControls.config.speed = 2 // Adjust speed
+  ```
+</ParamField>
+
+### Renderer
+
+<ParamField path="window.appViewer" type="object">
+  The main app viewer instance.
+  
+  **Usage:**
+  ```javascript
+  appViewer.backend               // Current rendering backend
+  appViewer.playerState           // Player state utilities
+  ```
+</ParamField>
+
+## Debug Helpers
+
+<Accordion title="Debug Enable/Disable">
+  The client uses the `debug` library for logging.
+  
+  ```javascript
+  // Enable all debug messages (WARNING: creates spam!)
+  debugToggle
+  
+  // Enable specific namespaces
+  debug.enable('minecraft-protocol')
+  debug.enable('mineflayer')
+  
+  // Disable debug messages
+  debug.disable()
+  ```
+  
+  <Warning>
+    Enabling all debug messages will create significant console spam. Use `options.debugLogNotFrequentPackets` instead.
+  </Warning>
+</Accordion>
+
+<Accordion title="Clear Storage">
+  Clear localStorage while keeping specific keys.
+  
+  ```javascript
+  // Clear all except saved worlds
+  clearStorage('worlds', 'keybindings')
+  
+  // Clear everything
+  clearStorage()
+  ```
+</Accordion>
+
+<Accordion title="Download File">
+  Download a file from the virtual file system.
+  
+  ```javascript
+  await downloadFile('/world/level.dat')
+  ```
+</Accordion>
+
+## Common Use Cases
+
+<CodeGroup>
+```javascript Check Player Position
+// Get current position
+const pos = bot.entity.position
+console.log(`X: ${pos.x}, Y: ${pos.y}, Z: ${pos.z}`)
+
+// Get chunk position
+const chunkX = Math.floor(pos.x / 16)
+const chunkZ = Math.floor(pos.z / 16)
+console.log(`Chunk: ${chunkX}, ${chunkZ}`)
+```
+
+```javascript Inspect Inventory
+// View all inventory slots
+bot.inventory.slots.forEach((item, i) => {
+  if (item) {
+    console.log(`Slot ${i}: ${item.name} x${item.count}`)
+  }
+})
+
+// Check hotbar
+const hotbar = bot.inventory.slots.slice(
+  bot.inventory.hotbarStart,
+  bot.inventory.hotbarStart + 9
+)
+console.log(hotbar)
+```
+
+```javascript World Information
+// In singleplayer
+console.log('World name:', localServer.levelData.LevelName)
+console.log('Spawn:', localServer.levelData.SpawnX, 
+                     localServer.levelData.SpawnY,
+                     localServer.levelData.SpawnZ)
+
+// Loaded chunks count
+console.log('Loaded sections:', len(world.sectionObjects))
+```
+
+```javascript Performance Monitoring
+// Monitor packet rate
+addStatPerSec('packets')
+
+// Check later
+console.log('Packets/sec:', statsPerSec.packets)
+
+// View average stats
+console.log(statsPerSecAvg)
+```
+</CodeGroup>
+
+## See Also
+
+- [Console Commands](/reference/console-commands) - Built-in commands and debug functions
+- [Keybindings](/reference/keybindings) - Keyboard shortcuts and controls
+- [Mineflayer API](https://github.com/PrismarineJS/mineflayer/blob/master/docs/api.md) - Complete bot API reference
