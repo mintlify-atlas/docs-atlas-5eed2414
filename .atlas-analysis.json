@@ -1,0 +1,92 @@
+{
+  "projectType": "saas",
+  "projectName": "Minecraft Web Client",
+  "projectDescription": "A fully-featured Minecraft client and server running entirely in your browser with offline support, world loading, and cross-platform compatibility.",
+  "theme": "palm",
+  "primaryColor": "#23568b",
+  "lightColor": "#6fbdde",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "browser-compatibility"
+            ]
+          },
+          {
+            "group": "Playing",
+            "pages": [
+              "playing/singleplayer",
+              "playing/multiplayer",
+              "playing/world-loading",
+              "playing/controls"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/resource-packs",
+              "features/mobile-touch",
+              "features/controller-support",
+              "features/minimap",
+              "features/p2p-multiplayer",
+              "features/settings"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/proxy-setup",
+              "advanced/docker",
+              "advanced/debugging",
+              "advanced/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/console-commands",
+              "reference/keybindings",
+              "reference/query-parameters",
+              "reference/global-variables"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Browser-based Minecraft client with full server compatibility",
+    "Integrated singleplayer server with world loading from zip/folders",
+    "Mobile and touch support with joystick controls",
+    "Controller/gamepad support for console-like experience",
+    "P2P multiplayer for playing with friends",
+    "Advanced resource pack support including custom textures",
+    "Offline-capable progressive web app",
+    "Built-in JEI (Just Enough Items) with recipes",
+    "Microsoft account authentication for online servers",
+    "Custom protocol extensions and client mods"
+  ],
+  "publicApiSurface": [
+    "bot (Mineflayer bot instance)",
+    "world (Three.js world renderer)",
+    "localServer (Flying Squid server)",
+    "options (Settings object)",
+    "debugToggle (Enable debug logging)",
+    "debugChangedOptions (View modified settings)",
+    "debugSceneChunks (Chunk debug info)",
+    "debugTopPackets (Packet statistics)",
+    "nbt.simplify() (NBT data parser)"
+  ]
+}
